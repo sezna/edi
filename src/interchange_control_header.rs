@@ -1,5 +1,5 @@
-use std::borrow::Cow;
 use crate::edi_parse_error::EdiParseError;
+use std::borrow::Cow;
 /// Represents the ISA/IEA header information commonly known as the "envelope" in X12 EDI.
 #[derive(PartialEq, Debug)]
 struct InterchangeControlHeader<'a> {
@@ -93,7 +93,6 @@ impl<'a> InterchangeControlHeader<'a> {
         })
     }
 }
-
 
 // For tests that check behavior of private fields or structs, I put the tests in
 // the same file. This avoids unnecessary `pub` at the cost of messier test organization.

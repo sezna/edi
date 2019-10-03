@@ -1,7 +1,8 @@
 extern crate edi_parser;
 use edi_parser::parse;
+
 #[test]
-fn end_to_end_test() {
+fn full_parse_test() {
     let input = "ISA*00*          *00*          *ZZ*SENDERISA      *14*0073268795005  *020226*1534*U*00401*000000001*0*T*>~
 GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010~
 ST*850*000000001~
