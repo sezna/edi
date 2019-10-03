@@ -2,6 +2,7 @@ use crate::edi_parse_error::EdiParseError;
 use std::borrow::Cow;
 
 /// Represents a GS/GE segment which wraps a functional group.
+#[derive(PartialEq, Debug)]
 pub struct FunctionalGroupHeader<'a> {
     functional_identifier_code: Cow<'a, str>,
     application_sender_code: Cow<'a, str>,
@@ -76,5 +77,7 @@ fn construct_GS_header() {
         version: Cow::from("004010"),
     };
 
-    let test_input = "GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010~";
+    let test_input = "GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010";
+
+    assert_eq!(FunctionalGroupHeader::parse_from_str(test_input, '*').unwrap(), expected_result);
 }
