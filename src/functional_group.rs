@@ -1,9 +1,12 @@
 use crate::edi_parse_error::EdiParseError;
+use crate::segment::Segment;
+use crate::transaction::Transaction;
+
 use std::borrow::Cow;
 
 /// Represents a GS/GE segment which wraps a functional group.
 #[derive(PartialEq, Debug)]
-pub struct FunctionalGroupHeader<'a> {
+pub struct FunctionalGroup<'a> {
     functional_identifier_code: Cow<'a, str>,
     application_sender_code: Cow<'a, str>,
     application_receiver_code: Cow<'a, str>,
@@ -12,13 +15,14 @@ pub struct FunctionalGroupHeader<'a> {
     group_control_number: Cow<'a, str>,
     responsible_agency_code: Cow<'a, str>,
     version: Cow<'a, str>,
+    transactions: Vec<Transaction<'a>>,
 }
 
-impl<'a> FunctionalGroupHeader<'a> {
+impl<'a> FunctionalGroup<'a> {
     pub fn parse_from_str(
         input: &'a str,
         element_delimiter: char,
-    ) -> Result<FunctionalGroupHeader<'a>, EdiParseError> {
+    ) -> Result<FunctionalGroup<'a>, EdiParseError> {
         let elements: Vec<&str> = input.split(element_delimiter).map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
@@ -51,7 +55,7 @@ impl<'a> FunctionalGroupHeader<'a> {
             Cow::from(elements[8]),
         );
 
-        Ok(FunctionalGroupHeader {
+        Ok(FunctionalGroup {
             functional_identifier_code,
             application_sender_code,
             application_receiver_code,
@@ -60,13 +64,14 @@ impl<'a> FunctionalGroupHeader<'a> {
             group_control_number,
             responsible_agency_code,
             version,
+            transactions: Vec::new(), // TODO
         })
     }
 }
 
 #[test]
-fn construct_GS_header() {
-    let expected_result = FunctionalGroupHeader {
+fn construct_functional_group() {
+    let expected_result = FunctionalGroup {
         functional_identifier_code: Cow::from("PO"),
         application_sender_code: Cow::from("SENDERGS"),
         application_receiver_code: Cow::from("007326879"),
@@ -75,9 +80,13 @@ fn construct_GS_header() {
         group_control_number: Cow::from("1"),
         responsible_agency_code: Cow::from("X"),
         version: Cow::from("004010"),
+        transactions: Vec::new(),
     };
 
     let test_input = "GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010";
 
-    assert_eq!(FunctionalGroupHeader::parse_from_str(test_input, '*').unwrap(), expected_result);
+    assert_eq!(
+        FunctionalGroup::parse_from_str(test_input, '*').unwrap(),
+        expected_result
+    );
 }

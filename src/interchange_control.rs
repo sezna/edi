@@ -1,8 +1,10 @@
 use crate::edi_parse_error::EdiParseError;
+use crate::functional_group::FunctionalGroup;
 use std::borrow::Cow;
+
 /// Represents the ISA/IEA header information commonly known as the "envelope" in X12 EDI.
 #[derive(PartialEq, Debug)]
-struct InterchangeControlHeader<'a> {
+struct InterchangeControl<'a> {
     // I chose to use `Cow`s here because I don't know how the crate will be used --
     // given enough documents of sufficient size and a restrictive enough environment,
     // the space complexity could undesirably grow. This allows for some mitigation
@@ -22,13 +24,14 @@ struct InterchangeControlHeader<'a> {
     interchange_control_number: Cow<'a, str>, // u64?
     acknowledgement_requested: Cow<'a, str>,  // bool?  0 for false, 1 for true
     test_indicator: Cow<'a, str>,             // P for production, T for test
+    functional_groups: Vec<FunctionalGroup<'a>>,
 }
 
-impl<'a> InterchangeControlHeader<'a> {
+impl<'a> InterchangeControl<'a> {
     pub fn parse_from_str(
         input: &'a str,
         element_delimiter: char,
-    ) -> Result<InterchangeControlHeader<'a>, EdiParseError> {
+    ) -> Result<InterchangeControl<'a>, EdiParseError> {
         let elements: Vec<&str> = input.split(element_delimiter).map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
@@ -74,7 +77,7 @@ impl<'a> InterchangeControlHeader<'a> {
             Cow::from(elements[14]),
             Cow::from(elements[15]),
         );
-        Ok(InterchangeControlHeader {
+        Ok(InterchangeControl {
             authorization_qualifier,
             authorization_information,
             security_qualifier,
@@ -90,6 +93,7 @@ impl<'a> InterchangeControlHeader<'a> {
             interchange_control_number,
             acknowledgement_requested,
             test_indicator,
+            functional_groups: Vec::new(), // TODO
         })
     }
 }
@@ -99,8 +103,8 @@ impl<'a> InterchangeControlHeader<'a> {
 // I think the trade-off is worth it, and the organizational loss is not that bad.
 // Of course, this is subjective.
 #[test]
-fn construct_ISA_header() {
-    let expected_result = InterchangeControlHeader {
+fn construct_interchange_control() {
+    let expected_result = InterchangeControl {
         authorization_qualifier: Cow::from("00"),
         authorization_information: Cow::from(""),
         security_qualifier: Cow::from("00"),
@@ -116,11 +120,12 @@ fn construct_ISA_header() {
         interchange_control_number: Cow::from("000000001"),
         acknowledgement_requested: Cow::from("0"),
         test_indicator: Cow::from("T"),
+        functional_groups: Vec::new(),
     };
 
     let test_input = "ISA*00*          *00*          *ZZ*SENDERISA      *14*0073268795005  *020226*1534*U*00401*000000001*0*T*>~";
     assert_eq!(
-        InterchangeControlHeader::parse_from_str(test_input, '*').unwrap(),
+        InterchangeControl::parse_from_str(test_input, '*').unwrap(),
         expected_result
     );
 }
