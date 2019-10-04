@@ -1,14 +1,17 @@
 use crate::edi_parse_error::EdiParseError;
 use crate::tokenizer::SegmentTokens;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::VecDeque;
 
 /// A generic segment.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub struct GenericSegment<'a> {
-    segment_abbreviation: Cow<'a, str>,
-    segment_name: &'static str,
-    elements: VecDeque<Cow<'a, str>>,
+    #[serde(borrow)]
+    pub segment_abbreviation: Cow<'a, str>,
+    pub segment_name: String,
+    #[serde(borrow)]
+    pub elements: VecDeque<Cow<'a, str>>,
 }
 
 impl<'a> GenericSegment<'a> {
@@ -20,7 +23,7 @@ impl<'a> GenericSegment<'a> {
         );
         let segment_abbreviation = Cow::from(elements[0]);
 
-        let segment_name: &'static str = "unidentified"; // TODO
+        let segment_name: String = "unidentified".to_string(); // TODO
 
         let elements = elements[1..]
             .to_vec()
@@ -52,7 +55,7 @@ fn construct_generic_segment() {
 
     let expected_result = GenericSegment {
         segment_abbreviation: Cow::from("GS"),
-        segment_name: "unidentified",
+        segment_name: String::from("unidentified"),
         elements: vec![
             "PO",
             "SENDERGS",

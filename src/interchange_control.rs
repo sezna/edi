@@ -3,38 +3,55 @@ use crate::functional_group::FunctionalGroup;
 
 use crate::tokenizer::SegmentTokens;
 
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::VecDeque;
 
 /// Represents the ISA/IEA header information commonly known as the "envelope" in X12 EDI.
-#[derive(PartialEq, Debug)]
-pub struct InterchangeControl<'a> {
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
+pub struct InterchangeControl<'a, 'b> {
     // I chose to use `Cow`s here because I don't know how the crate will be used --
     // given enough documents of sufficient size and a restrictive enough environment,
     // the space complexity could undesirably grow. This allows for some mitigation
     // and while it isn't zero-copy is at least less-copy.
-    authorization_qualifier: Cow<'a, str>,
-    authorization_information: Cow<'a, str>,
-    security_qualifier: Cow<'a, str>,
-    security_information: Cow<'a, str>,
-    sender_qualifier: Cow<'a, str>,
-    sender_id: Cow<'a, str>,
-    receiver_qualifier: Cow<'a, str>,
-    receiver_id: Cow<'a, str>,
-    date: Cow<'a, str>, // chrono::Date?
-    time: Cow<'a, str>, // chrono::Time?
-    standards_id: Cow<'a, str>,
-    version: Cow<'a, str>,                    // u64?
-    interchange_control_number: Cow<'a, str>, // u64?
-    acknowledgement_requested: Cow<'a, str>,  // bool?  0 for false, 1 for true
-    test_indicator: Cow<'a, str>,             // P for production, T for test
-    functional_groups: VecDeque<FunctionalGroup<'a>>,
+    #[serde(borrow)]
+    pub authorization_qualifier: Cow<'a, str>,
+    #[serde(borrow)]
+    pub authorization_information: Cow<'a, str>,
+    #[serde(borrow)]
+    pub security_qualifier: Cow<'a, str>,
+    #[serde(borrow)]
+    pub security_information: Cow<'a, str>,
+    #[serde(borrow)]
+    pub sender_qualifier: Cow<'a, str>,
+    #[serde(borrow)]
+    pub sender_id: Cow<'a, str>,
+    #[serde(borrow)]
+    pub receiver_qualifier: Cow<'a, str>,
+    #[serde(borrow)]
+    pub receiver_id: Cow<'a, str>,
+    #[serde(borrow)]
+    pub date: Cow<'a, str>, // chrono::Date?
+    #[serde(borrow)]
+    pub time: Cow<'a, str>, // chrono::Time?
+    #[serde(borrow)]
+    pub standards_id: Cow<'a, str>,
+    #[serde(borrow)]
+    pub version: Cow<'a, str>, // u64?
+    #[serde(borrow)]
+    pub interchange_control_number: Cow<'a, str>, // u64?
+    #[serde(borrow)]
+    pub acknowledgement_requested: Cow<'a, str>, // bool?  0 for false, 1 for true
+    #[serde(borrow)]
+    pub test_indicator: Cow<'a, str>, // P for production, T for test
+    #[serde(borrow = "'a + 'b")]
+    pub functional_groups: VecDeque<FunctionalGroup<'a, 'b>>,
 }
 
-impl<'a> InterchangeControl<'a> {
+impl<'a, 'b> InterchangeControl<'a, 'b> {
     pub fn parse_from_tokens(
         input: SegmentTokens<'a>,
-    ) -> Result<InterchangeControl<'a>, EdiParseError> {
+    ) -> Result<InterchangeControl<'a, 'b>, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.

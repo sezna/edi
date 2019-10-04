@@ -3,27 +3,37 @@ use crate::edi_parse_error::EdiParseError;
 use crate::transaction::Transaction;
 
 use crate::tokenizer::SegmentTokens;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::VecDeque;
 
 /// Represents a GS/GE segment which wraps a functional group.
-#[derive(PartialEq, Debug)]
-pub struct FunctionalGroup<'a> {
-    functional_identifier_code: Cow<'a, str>,
-    application_sender_code: Cow<'a, str>,
-    application_receiver_code: Cow<'a, str>,
-    date: Cow<'a, str>,
-    time: Cow<'a, str>,
-    group_control_number: Cow<'a, str>,
-    responsible_agency_code: Cow<'a, str>,
-    version: Cow<'a, str>,
-    transactions: VecDeque<Transaction<'a>>,
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
+pub struct FunctionalGroup<'a, 'b> {
+    #[serde(borrow)]
+    pub functional_identifier_code: Cow<'a, str>,
+    #[serde(borrow)]
+    pub application_sender_code: Cow<'a, str>,
+    #[serde(borrow)]
+    pub application_receiver_code: Cow<'a, str>,
+    #[serde(borrow)]
+    pub date: Cow<'a, str>,
+    #[serde(borrow)]
+    pub time: Cow<'a, str>,
+    #[serde(borrow)]
+    pub group_control_number: Cow<'a, str>,
+    #[serde(borrow)]
+    pub responsible_agency_code: Cow<'a, str>,
+    #[serde(borrow)]
+    pub version: Cow<'a, str>,
+    #[serde(borrow = "'a + 'b")]
+    pub transactions: VecDeque<Transaction<'a, 'b>>,
 }
 
-impl<'a> FunctionalGroup<'a> {
+impl<'a, 'b> FunctionalGroup<'a, 'b> {
     pub fn parse_from_tokens(
         input: SegmentTokens<'a>,
-    ) -> Result<FunctionalGroup<'a>, EdiParseError> {
+    ) -> Result<FunctionalGroup<'a, 'b>, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.

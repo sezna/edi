@@ -3,17 +3,23 @@ use crate::generic_segment::GenericSegment;
 use crate::tokenizer::SegmentTokens;
 use csv::ReaderBuilder;
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
 
 /// Represents a transaction in an EDI document. A transaction is initialized with an ST segment
 /// and ended with an SE segment.
-#[derive(PartialEq, Debug)]
-pub struct Transaction<'a> {
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
+pub struct Transaction<'a, 'b> {
+    #[serde(borrow)]
     transaction_code: Cow<'a, str>,
-    transaction_name: &'static str, // not a Cow because it is a reference to a HashMap value
+    #[serde(borrow)]
+    transaction_name: &'b str, // not a Cow because it is a reference to a HashMap value
+    #[serde(borrow)]
     transaction_set_control_number: Cow<'a, str>,
+    #[serde(borrow)]
     implementation_convention_reference: Option<Cow<'a, str>>,
+    #[serde(borrow)]
     segments: VecDeque<GenericSegment<'a>>,
 }
 
@@ -35,8 +41,10 @@ lazy_static! {
     };
 }
 
-impl<'a> Transaction<'a> {
-    pub fn parse_from_tokens(input: SegmentTokens<'a>) -> Result<Transaction, EdiParseError> {
+impl<'a, 'b> Transaction<'a, 'b> {
+    pub fn parse_from_tokens(
+        input: SegmentTokens<'a>,
+    ) -> Result<Transaction<'a, 'b>, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.

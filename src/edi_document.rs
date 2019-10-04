@@ -1,14 +1,17 @@
 use crate::edi_parse_error::EdiParseError;
 use crate::interchange_control::InterchangeControl;
 use crate::tokenizer::tokenize;
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 
 /// Represents an entire parsed EDI document with both the envelope (i.e. metadata) and
 /// the data segments.
-pub struct EdiDocument<'a> {
+#[derive(Serialize, Deserialize)]
+pub struct EdiDocument<'a, 'b> {
     // Here I chose a VecDeque because when I output an EDI document, I want to pull from
     // it in a queue style.
-    pub interchanges: VecDeque<InterchangeControl<'a>>,
+    #[serde(borrow = "'a + 'b")]
+    pub interchanges: VecDeque<InterchangeControl<'a, 'b>>,
 }
 
 /// This is the main entry point to the crate. Parse an input str and output either
