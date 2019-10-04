@@ -79,6 +79,26 @@ impl<'a> Transaction<'a> {
                 .expect("unable to parse generic segment from given tokens"),
         );
     }
+
+    /// Validate this transaction with an SE segment.
+    pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+        edi_assert!(
+            tokens[0] == "SE",
+            "attempted to validate transaction with non-SE segment"
+        );
+        // we have to add two here because transaction counts include ST and SE
+        edi_assert!(
+            str::parse::<usize>(tokens[1]).unwrap() == self.segments.len() + 2,
+            "transaction validation failed: incorrect number of segments",
+            tokens[1],
+            self.segments.len()
+        );
+        edi_assert!(
+            tokens[2] == self.transaction_set_control_number,
+            "transaction validation failed: incorrect transaction ID"
+        );
+        Ok(())
+    }
 }
 
 #[test]

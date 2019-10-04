@@ -40,6 +40,25 @@ pub fn parse(input: &str) -> Result<EdiDocument, EdiParseError> {
                     .expect("unable to enqueue transaction when no interchanges have been enqueued")
                     .add_transaction(segment);
             }
+            "IEA" => {
+                interchanges
+                    .back()
+                    .expect("unable to validate IEA without initial ISA")
+                    .validate_interchange_control(segment)
+                    .expect("interchange control validation failed");
+            }
+            "GE" => {
+                interchanges
+                    .back()
+                    .expect("unable to validate GE without interchange")
+                    .validate_functional_group(segment)
+                    .expect("functional group validation failed");
+            }
+            "SE" => interchanges
+                .back()
+                .expect("unable to validate SE without interchange")
+                .validate_transaction(segment)
+                .expect("transaction validation failed"),
             _ => {
                 interchanges
                     .back_mut()

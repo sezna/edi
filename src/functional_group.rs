@@ -83,6 +83,34 @@ impl<'a> FunctionalGroup<'a> {
             .expect("unable to enqueue generic segment when no transactions have been enqueued")
             .add_generic_segment(tokens);
     }
+
+    /// Verify this [FunctionalGroup] with a GE segment.
+    pub fn validate_functional_group(
+        &self,
+        tokens: SegmentTokens<'a>,
+    ) -> Result<(), EdiParseError> {
+        edi_assert!(
+            tokens[0] == "GE",
+            "attempted to call GE verification on non-GE segment"
+        );
+        edi_assert!(
+            self.transactions.len() == str::parse::<usize>(tokens[1]).unwrap(),
+            "functional group validation failed: incorrect number of transactions"
+        );
+        edi_assert!(
+            self.group_control_number == tokens[2],
+            "functional group validation failed: mismatched ID"
+        );
+        Ok(())
+    }
+
+    /// Validate the latest [Transaction] within this functional group with an SE segment.
+    pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+        self.transactions
+            .back()
+            .expect("unable to validate nonexistent transaction")
+            .validate_transaction(tokens)
+    }
 }
 
 #[test]

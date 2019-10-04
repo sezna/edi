@@ -124,6 +124,49 @@ impl<'a> InterchangeControl<'a> {
             .expect("unable to enqueue generic segment when no functional groups have been added")
             .add_generic_segment(tokens);
     }
+
+    /// Given the tokens of an IEA segment, or Interchange Control closer, verify that the correct
+    /// number of control groups have been given.
+    pub fn validate_interchange_control(
+        &self,
+        tokens: SegmentTokens<'a>,
+    ) -> Result<(), EdiParseError> {
+        edi_assert!(
+            tokens[0] == "IEA",
+            "attempted to verify IEA on non-IEA segment"
+        );
+        edi_assert!(
+            str::parse::<usize>(&tokens[1].to_string()).unwrap() == self.functional_groups.len(),
+            "interchange validation failed: incorrect number of functional groups",
+            (tokens[2].to_string(), self.functional_groups.len())
+        );
+        edi_assert!(
+            tokens[2] == self.interchange_control_number,
+            "interchange validation failed: mismatched ID",
+            (tokens[1], self.interchange_control_number.clone())
+        );
+
+        Ok(())
+    }
+
+    /// Verify the latest [FunctionalGroup] with a GE segment.
+    pub fn validate_functional_group(
+        &self,
+        tokens: SegmentTokens<'a>,
+    ) -> Result<(), EdiParseError> {
+        self.functional_groups
+            .back()
+            .expect("unable to verify nonexistent functional group")
+            .validate_functional_group(tokens)
+    }
+
+    /// Verify the latest [Transaction] within the latest [FunctionalGroup]
+    pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+        self.functional_groups
+            .back()
+            .expect("unable to verify transaction within nonexistent functional group")
+            .validate_transaction(tokens)
+    }
 }
 
 #[test]

@@ -27,6 +27,11 @@ impl EdiParseError {
 }
 
 /// returns an EDI error with a custom error message if the given condition is false.
+/// Supports three use cases:
+///    `(condition, reason)` - if not condition, display reason
+///    `(condition, reason, additional_info)` - if not condition, display reason with extra debug info
+///    `(condition, reason, expected, result)` - if not condition, display reason with what was expected and what occurred.
+///                                              similar to `assert_eq!`.
 macro_rules! edi_assert {
     ($condition:expr, $reason:expr) => {{
         if !$condition {
@@ -37,6 +42,17 @@ macro_rules! edi_assert {
         if !$condition {
             return Err(EdiParseError::new(
                 format!("{} {:?}", $reason, $additional_info).as_str(),
+            ));
+        }
+    }};
+    ($condition:expr, $reason:expr, $expected:expr, $result:expr) => {{
+        if !$condition {
+            return Err(EdiParseError::new(
+                format!(
+                    "{}  --  expected: {}  received: {}",
+                    $reason, $expected, $result
+                )
+                .as_str(),
             ));
         }
     }};
