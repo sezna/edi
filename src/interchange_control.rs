@@ -1,10 +1,14 @@
 use crate::edi_parse_error::EdiParseError;
 use crate::functional_group::FunctionalGroup;
+
+use crate::tokenizer::SegmentTokens;
+
 use std::borrow::Cow;
+use std::collections::VecDeque;
 
 /// Represents the ISA/IEA header information commonly known as the "envelope" in X12 EDI.
 #[derive(PartialEq, Debug)]
-struct InterchangeControl<'a> {
+pub struct InterchangeControl<'a> {
     // I chose to use `Cow`s here because I don't know how the crate will be used --
     // given enough documents of sufficient size and a restrictive enough environment,
     // the space complexity could undesirably grow. This allows for some mitigation
@@ -24,11 +28,13 @@ struct InterchangeControl<'a> {
     interchange_control_number: Cow<'a, str>, // u64?
     acknowledgement_requested: Cow<'a, str>,  // bool?  0 for false, 1 for true
     test_indicator: Cow<'a, str>,             // P for production, T for test
-    functional_groups: Vec<FunctionalGroup<'a>>,
+    functional_groups: VecDeque<FunctionalGroup<'a>>,
 }
 
 impl<'a> InterchangeControl<'a> {
-    pub fn parse_from_str(input: Vec<&'a str>) -> Result<InterchangeControl<'a>, EdiParseError> {
+    pub fn parse_from_tokens(
+        input: SegmentTokens<'a>,
+    ) -> Result<InterchangeControl<'a>, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
@@ -90,15 +96,36 @@ impl<'a> InterchangeControl<'a> {
             interchange_control_number,
             acknowledgement_requested,
             test_indicator,
-            functional_groups: Vec::new(), // TODO
+            functional_groups: VecDeque::new(),
         })
+    }
+
+    /// Enqueue a [FunctionalGroup] into the interchange. Subsequent [Transaction]s will be inserted into this functional group,
+    /// until a new one is enqueued.
+    pub fn add_functional_group(&mut self, tokens: SegmentTokens<'a>) {
+        self.functional_groups.push_back(
+            FunctionalGroup::parse_from_tokens(tokens)
+                .expect("failed to parse functional group header"),
+        );
+    }
+
+    /// Enqueue a [Transaction] into the most recently enqueued [FunctionalGroup] in this interchange.
+    pub fn add_transaction(&mut self, tokens: SegmentTokens<'a>) {
+        self.functional_groups
+            .back_mut()
+            .expect("unable to enqueue transaction when no functional groups have been added")
+            .add_transaction(tokens)
+    }
+
+    /// Enqueue a [GenericSegment] into the most recently enqueued [FunctionalGroup]'s most recently enqueued [Transaction].
+    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) {
+        self.functional_groups
+            .back_mut()
+            .expect("unable to enqueue generic segment when no functional groups have been added")
+            .add_generic_segment(tokens);
     }
 }
 
-// For tests that check behavior of private fields or structs, I put the tests in
-// the same file. This avoids unnecessary `pub` at the cost of messier test organization.
-// I think the trade-off is worth it, and the organizational loss is not that bad.
-// Of course, this is subjective.
 #[test]
 fn construct_interchange_control() {
     let expected_result = InterchangeControl {
@@ -117,7 +144,7 @@ fn construct_interchange_control() {
         interchange_control_number: Cow::from("000000001"),
         acknowledgement_requested: Cow::from("0"),
         test_indicator: Cow::from("T"),
-        functional_groups: Vec::new(),
+        functional_groups: VecDeque::new(),
     };
 
     let test_input = vec![
@@ -139,7 +166,7 @@ fn construct_interchange_control() {
         "T",
     ];
     assert_eq!(
-        InterchangeControl::parse_from_str(test_input,).unwrap(),
+        InterchangeControl::parse_from_tokens(test_input,).unwrap(),
         expected_result
     );
 }

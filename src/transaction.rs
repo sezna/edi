@@ -1,8 +1,10 @@
 use crate::edi_parse_error::EdiParseError;
+use crate::generic_segment::GenericSegment;
+use crate::tokenizer::SegmentTokens;
 use csv::ReaderBuilder;
 use lazy_static::lazy_static;
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 /// Represents a transaction in an EDI document. A transaction is initialized with an ST segment
 /// and ended with an SE segment.
@@ -12,6 +14,7 @@ pub struct Transaction<'a> {
     transaction_name: &'static str, // not a Cow because it is a reference to a HashMap value
     transaction_set_control_number: Cow<'a, str>,
     implementation_convention_reference: Option<Cow<'a, str>>,
+    segments: VecDeque<GenericSegment<'a>>,
 }
 
 // Load the potential transaction schema names from a csv
@@ -33,7 +36,7 @@ lazy_static! {
 }
 
 impl<'a> Transaction<'a> {
-    pub fn parse_from_str(input: Vec<&'a str>) -> Result<Transaction, EdiParseError> {
+    pub fn parse_from_tokens(input: SegmentTokens<'a>) -> Result<Transaction, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
@@ -65,7 +68,16 @@ impl<'a> Transaction<'a> {
             transaction_name,
             transaction_set_control_number,
             implementation_convention_reference,
+            segments: VecDeque::new(),
         })
+    }
+
+    /// Enqueue a [GenericSegment] into the transaction.
+    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) {
+        self.segments.push_back(
+            GenericSegment::parse_from_tokens(tokens)
+                .expect("unable to parse generic segment from given tokens"),
+        );
     }
 }
 
@@ -76,11 +88,12 @@ fn construct_transaction() {
         transaction_name: SCHEMAS.get(&"850".to_string()).unwrap(), // should be "Purchase Order"
         transaction_set_control_number: Cow::from("000000001"),
         implementation_convention_reference: None,
+        segments: VecDeque::new(),
     };
     let test_input = vec!["ST", "850", "000000001"];
 
     assert_eq!(
-        Transaction::parse_from_str(test_input).unwrap(),
+        Transaction::parse_from_tokens(test_input).unwrap(),
         expected_result
     );
 }

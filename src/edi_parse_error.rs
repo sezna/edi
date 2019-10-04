@@ -1,4 +1,4 @@
-use std::{borrow::Cow, error, fmt};
+use std::{error, fmt};
 
 /// Represents an error that occured at any point in parsing a document.
 #[derive(Debug, Clone)]

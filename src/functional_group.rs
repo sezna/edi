@@ -1,8 +1,10 @@
 use crate::edi_parse_error::EdiParseError;
-use crate::segment::Segment;
+
 use crate::transaction::Transaction;
 
+use crate::tokenizer::SegmentTokens;
 use std::borrow::Cow;
+use std::collections::VecDeque;
 
 /// Represents a GS/GE segment which wraps a functional group.
 #[derive(PartialEq, Debug)]
@@ -15,11 +17,13 @@ pub struct FunctionalGroup<'a> {
     group_control_number: Cow<'a, str>,
     responsible_agency_code: Cow<'a, str>,
     version: Cow<'a, str>,
-    transactions: Vec<Transaction<'a>>,
+    transactions: VecDeque<Transaction<'a>>,
 }
 
 impl<'a> FunctionalGroup<'a> {
-    pub fn parse_from_str(input: Vec<&'a str>) -> Result<FunctionalGroup<'a>, EdiParseError> {
+    pub fn parse_from_tokens(
+        input: SegmentTokens<'a>,
+    ) -> Result<FunctionalGroup<'a>, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
@@ -61,8 +65,23 @@ impl<'a> FunctionalGroup<'a> {
             group_control_number,
             responsible_agency_code,
             version,
-            transactions: Vec::new(), // TODO
+            transactions: VecDeque::new(),
         })
+    }
+
+    /// Enqueue a [Transaction] into the group. Subsequent segments will be enqueued into this transaction.
+    pub fn add_transaction(&mut self, tokens: SegmentTokens<'a>) {
+        self.transactions.push_back(
+            Transaction::parse_from_tokens(tokens).expect("failed to parse transaction header"),
+        );
+    }
+
+    /// Enqueue a [GenericSegment] into the most recently enqueued [Transaction].
+    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) {
+        self.transactions
+            .back_mut()
+            .expect("unable to enqueue generic segment when no transactions have been enqueued")
+            .add_generic_segment(tokens);
     }
 }
 
@@ -77,7 +96,7 @@ fn construct_functional_group() {
         group_control_number: Cow::from("1"),
         responsible_agency_code: Cow::from("X"),
         version: Cow::from("004010"),
-        transactions: Vec::new(),
+        transactions: VecDeque::new(),
     };
 
     let test_input = vec![
@@ -93,7 +112,7 @@ fn construct_functional_group() {
     ];
 
     assert_eq!(
-        FunctionalGroup::parse_from_str(test_input).unwrap(),
+        FunctionalGroup::parse_from_tokens(test_input).unwrap(),
         expected_result
     );
 }

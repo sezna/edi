@@ -1,6 +1,9 @@
 extern crate edi_parser;
 use edi_parser::parse;
-
+// For tests that check behavior of private fields or structs, or individual unit tests, I put the tests in
+// the same file as the struct/function being tested. This avoids unnecessary `pub` at the cost of messier test organization.
+// I think the trade-off is worth it, and the organizational loss is not that bad.
+// I reserve this file for E2E and integration tests.
 #[test]
 fn full_parse_test() {
     let input = "ISA*00*          *00*          *ZZ*SENDERISA      *14*0073268795005  *020226*1534*U*00401*000000001*0*T*>~
@@ -43,7 +46,5 @@ SE*35*000000001~
 GE*1*1~
 IEA*1*000000001~";
 
-    println!("{}", &input[103..106]);
-
-    parse(input);
+    let _edi_document = parse(input).unwrap();
 }
