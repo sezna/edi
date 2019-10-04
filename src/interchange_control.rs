@@ -28,11 +28,8 @@ struct InterchangeControl<'a> {
 }
 
 impl<'a> InterchangeControl<'a> {
-    pub fn parse_from_str(
-        input: &'a str,
-        element_delimiter: char,
-    ) -> Result<InterchangeControl<'a>, EdiParseError> {
-        let elements: Vec<&str> = input.split(element_delimiter).map(|x| x.trim()).collect();
+    pub fn parse_from_str(input: Vec<&'a str>) -> Result<InterchangeControl<'a>, EdiParseError> {
+        let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
         edi_assert!(
@@ -123,9 +120,26 @@ fn construct_interchange_control() {
         functional_groups: Vec::new(),
     };
 
-    let test_input = "ISA*00*          *00*          *ZZ*SENDERISA      *14*0073268795005  *020226*1534*U*00401*000000001*0*T*>~";
+    let test_input = vec![
+        "ISA",
+        "00",
+        "",
+        "00",
+        "",
+        "ZZ",
+        "SENDERISA",
+        "14",
+        "0073268795005",
+        "020226",
+        "1534",
+        "U",
+        "00401",
+        "000000001",
+        "0",
+        "T",
+    ];
     assert_eq!(
-        InterchangeControl::parse_from_str(test_input, '*').unwrap(),
+        InterchangeControl::parse_from_str(test_input,).unwrap(),
         expected_result
     );
 }

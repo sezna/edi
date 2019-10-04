@@ -4,6 +4,8 @@ use lazy_static::lazy_static;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
+/// Represents a transaction in an EDI document. A transaction is initialized with an ST segment
+/// and ended with an SE segment.
 #[derive(PartialEq, Debug)]
 pub struct Transaction<'a> {
     transaction_code: Cow<'a, str>,
@@ -31,11 +33,8 @@ lazy_static! {
 }
 
 impl<'a> Transaction<'a> {
-    pub fn parse_from_str(
-        input: &str,
-        element_delimiter: char,
-    ) -> Result<Transaction, EdiParseError> {
-        let elements: Vec<&str> = input.split(element_delimiter).map(|x| x.trim()).collect();
+    pub fn parse_from_str(input: Vec<&'a str>) -> Result<Transaction, EdiParseError> {
+        let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
         edi_assert!(
@@ -44,7 +43,7 @@ impl<'a> Transaction<'a> {
         );
         edi_assert!(
             elements.len() >= 3,
-            "GS segment does not contain enough elements",
+            "ST segment does not contain enough elements",
             elements.len()
         );
 
@@ -78,16 +77,16 @@ fn construct_transaction() {
         transaction_set_control_number: Cow::from("000000001"),
         implementation_convention_reference: None,
     };
-    let test_input = "ST*850*000000001";
+    let test_input = vec!["ST", "850", "000000001"];
 
     assert_eq!(
-        Transaction::parse_from_str(test_input, '*').unwrap(),
+        Transaction::parse_from_str(test_input).unwrap(),
         expected_result
     );
 }
 
 #[test]
-fn spot_check_schema() {
+fn spot_check_schemas() {
     assert_eq!(SCHEMAS.get(&"850".to_string()).unwrap(), "Purchase Order");
     assert_eq!(
         SCHEMAS.get(&"100".to_string()).unwrap(),

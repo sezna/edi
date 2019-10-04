@@ -19,11 +19,8 @@ pub struct FunctionalGroup<'a> {
 }
 
 impl<'a> FunctionalGroup<'a> {
-    pub fn parse_from_str(
-        input: &'a str,
-        element_delimiter: char,
-    ) -> Result<FunctionalGroup<'a>, EdiParseError> {
-        let elements: Vec<&str> = input.split(element_delimiter).map(|x| x.trim()).collect();
+    pub fn parse_from_str(input: Vec<&'a str>) -> Result<FunctionalGroup<'a>, EdiParseError> {
+        let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
         edi_assert!(
@@ -83,10 +80,20 @@ fn construct_functional_group() {
         transactions: Vec::new(),
     };
 
-    let test_input = "GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010";
+    let test_input = vec![
+        "GS",
+        "PO",
+        "SENDERGS",
+        "007326879",
+        "20020226",
+        "1534",
+        "1",
+        "X",
+        "004010",
+    ];
 
     assert_eq!(
-        FunctionalGroup::parse_from_str(test_input, '*').unwrap(),
+        FunctionalGroup::parse_from_str(test_input).unwrap(),
         expected_result
     );
 }
