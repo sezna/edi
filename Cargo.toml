@@ -1,8 +1,13 @@
 [package]
-name = "edi_parser"
+name = "edi"
 version = "0.1.0"
 authors = ["alex-hansen <ahansen@stackline.com>"]
 edition = "2018"
+license-file = "LICENSE.md"
+description = "Parser for X12 EDI files"
+homepage = "https://github.com/sezna/edi"
+documentation = "https://docs.rs/edi"
+repository = "https://github.com/sezna/edi"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

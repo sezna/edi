@@ -155,12 +155,14 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         edi_assert!(
             str::parse::<usize>(&tokens[1].to_string()).unwrap() == self.functional_groups.len(),
             "interchange validation failed: incorrect number of functional groups",
-            (tokens[2].to_string(), self.functional_groups.len())
+            tokens[1].to_string(),
+            self.functional_groups.len()
         );
         edi_assert!(
             tokens[2] == self.interchange_control_number,
             "interchange validation failed: mismatched ID",
-            (tokens[1], self.interchange_control_number.clone())
+            tokens[2],
+            self.interchange_control_number.clone()
         );
 
         Ok(())

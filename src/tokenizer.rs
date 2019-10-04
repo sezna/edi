@@ -28,7 +28,6 @@ pub fn tokenize(input: &str) -> Result<DocumentTokens, EdiParseError> {
         element_delimiter != segment_delimiter,
         "element and segment delimiters cannot be the same"
     );
-
     // Filter out any empty segments caused by newlines.
     let segments: SegmentTokens = input
         .split(segment_delimiter)

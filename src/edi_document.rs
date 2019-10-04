@@ -17,14 +17,24 @@ pub struct EdiDocument<'a, 'b> {
 /// This is the main entry point to the crate. Parse an input str and output either
 /// an [EdiParseError] or a resulting [EdiDocument].
 pub fn parse(input: &str) -> Result<EdiDocument, EdiParseError> {
+    parse_inner(input, false)
+}
+
+/// This is an alternate parser which does not perform closing tag validation. If you are receiving
+/// EDI documents which have had less rigor applied to their construction, this may help. The number
+/// of documents in the confirmation and the IDs on the closing tags don't need to match.
+pub fn loose_parse(input: &str) -> Result<EdiDocument, EdiParseError> {
+    parse_inner(input, true)
+}
+
+/// An internal function which is the root of the parsing. It is accessed publicly via [parse] and [loose_parse].
+fn parse_inner(input: &str, loose: bool) -> Result<EdiDocument, EdiParseError> {
     let document_tokens = tokenize(input).expect("unsupported EDI format");
 
     // Go through all the segments and parse them either into an interchange control header,
     // functional group header, transaction header, or generic segment. Also verify that
     // the nesting order is correct.
     let mut interchanges: VecDeque<InterchangeControl> = VecDeque::new();
-    // I recognize there is a more elegant way to do this, but this is sufficient for the time being,
-    // and the framework I've made allows for this logic to be replaced without rewiring the whole crate.
 
     for segment in document_tokens {
         match segment[0] {
@@ -44,24 +54,32 @@ pub fn parse(input: &str) -> Result<EdiDocument, EdiParseError> {
                     .add_transaction(segment);
             }
             "IEA" => {
-                interchanges
-                    .back()
-                    .expect("unable to validate IEA without initial ISA")
-                    .validate_interchange_control(segment)
-                    .expect("interchange control validation failed");
+                if !loose {
+                    interchanges
+                        .back()
+                        .expect("unable to validate IEA without initial ISA")
+                        .validate_interchange_control(segment)
+                        .expect("interchange control validation failed");
+                }
             }
             "GE" => {
-                interchanges
-                    .back()
-                    .expect("unable to validate GE without interchange")
-                    .validate_functional_group(segment)
-                    .expect("functional group validation failed");
+                if !loose {
+                    interchanges
+                        .back()
+                        .expect("unable to validate GE without interchange")
+                        .validate_functional_group(segment)
+                        .expect("functional group validation failed");
+                }
             }
-            "SE" => interchanges
-                .back()
-                .expect("unable to validate SE without interchange")
-                .validate_transaction(segment)
-                .expect("transaction validation failed"),
+            "SE" => {
+                if !loose {
+                    interchanges
+                        .back()
+                        .expect("unable to validate SE without interchange")
+                        .validate_transaction(segment)
+                        .expect("transaction validation failed")
+                }
+            }
             _ => {
                 interchanges
                     .back_mut()

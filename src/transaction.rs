@@ -12,15 +12,15 @@ use std::collections::{HashMap, VecDeque};
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub struct Transaction<'a, 'b> {
     #[serde(borrow)]
-    transaction_code: Cow<'a, str>,
+    pub transaction_code: Cow<'a, str>,
     #[serde(borrow)]
-    transaction_name: &'b str, // not a Cow because it is a reference to a HashMap value
+    pub transaction_name: &'b str, // not a Cow because it is a reference to a HashMap value
     #[serde(borrow)]
-    transaction_set_control_number: Cow<'a, str>,
+    pub transaction_set_control_number: Cow<'a, str>,
     #[serde(borrow)]
-    implementation_convention_reference: Option<Cow<'a, str>>,
+    pub implementation_convention_reference: Option<Cow<'a, str>>,
     #[serde(borrow)]
-    segments: VecDeque<GenericSegment<'a>>,
+    pub segments: VecDeque<GenericSegment<'a>>,
 }
 
 // Load the potential transaction schema names from a csv

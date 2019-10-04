@@ -37,7 +37,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "edi_parser"
+name = "edi"
 version = "0.1.0"
 dependencies = [
  "csv 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
