@@ -9,7 +9,6 @@ use std::collections::VecDeque;
 pub struct GenericSegment<'a> {
     #[serde(borrow)]
     pub segment_abbreviation: Cow<'a, str>,
-    pub segment_name: String,
     #[serde(borrow)]
     pub elements: VecDeque<Cow<'a, str>>,
 }
@@ -23,8 +22,6 @@ impl<'a> GenericSegment<'a> {
         );
         let segment_abbreviation = Cow::from(elements[0]);
 
-        let segment_name: String = "unidentified".to_string(); // TODO
-
         let elements = elements[1..]
             .to_vec()
             .iter()
@@ -33,7 +30,6 @@ impl<'a> GenericSegment<'a> {
 
         Ok(GenericSegment {
             segment_abbreviation,
-            segment_name,
             elements,
         })
     }
@@ -55,7 +51,6 @@ fn construct_generic_segment() {
 
     let expected_result = GenericSegment {
         segment_abbreviation: Cow::from("GS"),
-        segment_name: String::from("unidentified"),
         elements: vec![
             "PO",
             "SENDERGS",

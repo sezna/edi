@@ -159,7 +159,7 @@ SE*18*1004
 GE*1*1320
 IEA*1*000001320";
 
-    let edi_document = loose_parse(test_input);
+    loose_parse(test_input).unwrap();
 }
 
 #[test]
