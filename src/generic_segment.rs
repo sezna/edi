@@ -7,13 +7,16 @@ use std::collections::VecDeque;
 /// A generic segment.
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub struct GenericSegment<'a> {
+    /// The first element in the segment which denotes the segment type.
     #[serde(borrow)]
     pub segment_abbreviation: Cow<'a, str>,
+    /// The ordered list of elements in the segment.
     #[serde(borrow)]
     pub elements: VecDeque<Cow<'a, str>>,
 }
 
 impl<'a> GenericSegment<'a> {
+    /// Given [SegmentTokens], construct a [GenericSegment].
     pub fn parse_from_tokens(tokens: SegmentTokens<'a>) -> Result<GenericSegment, EdiParseError> {
         let elements: Vec<&str> = tokens.iter().map(|x| x.trim()).collect();
         edi_assert!(

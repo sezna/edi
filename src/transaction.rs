@@ -11,14 +11,20 @@ use std::collections::{HashMap, VecDeque};
 /// and ended with an SE segment.
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub struct Transaction<'a, 'b> {
+    /// The numeric code which represents the type of transaction.
     #[serde(borrow)]
     pub transaction_code: Cow<'a, str>,
+    /// The name of the transaction type in human-readable form.
     #[serde(borrow)]
     pub transaction_name: &'b str, // not a Cow because it is a reference to a HashMap value
+    /// Each transaction within a functional group also has a control number.
+    /// Typically, trading partners use a number relative to the functional group in which they are contained.
     #[serde(borrow)]
     pub transaction_set_control_number: Cow<'a, str>,
+    /// Identifier of the implementation convention reference. Valid value is up to 35 standard characters. Optional.
     #[serde(borrow)]
     pub implementation_convention_reference: Option<Cow<'a, str>>,
+    /// The [GenericSegment]s contained within this transaction.
     #[serde(borrow)]
     pub segments: VecDeque<GenericSegment<'a>>,
 }
@@ -42,6 +48,7 @@ lazy_static! {
 }
 
 impl<'a, 'b> Transaction<'a, 'b> {
+    /// Given [SegmentTokens] (where the first token is "ST"), construct a [Transaction].
     pub fn parse_from_tokens(
         input: SegmentTokens<'a>,
     ) -> Result<Transaction<'a, 'b>, EdiParseError> {

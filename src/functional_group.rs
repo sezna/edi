@@ -8,29 +8,52 @@ use std::borrow::Cow;
 use std::collections::VecDeque;
 
 /// Represents a GS/GE segment which wraps a functional group.
+/// Documentation here gleaned mostly from [here](http://u.sezna.dev/b)
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub struct FunctionalGroup<'a, 'b> {
+    /// Identifies the function of this group.
+    /// See http://ecomgx17.ecomtoday.com/edi/EDI_4010/el479.htm for a list of
+    /// functional identifier codes.
     #[serde(borrow)]
     pub functional_identifier_code: Cow<'a, str>,
+    /// Identifies the sender of this group.
     #[serde(borrow)]
     pub application_sender_code: Cow<'a, str>,
+    /// Identifies the receiver of this group.
     #[serde(borrow)]
     pub application_receiver_code: Cow<'a, str>,
+    /// Identifies the date of the function performed.
     #[serde(borrow)]
     pub date: Cow<'a, str>,
+    /// Identifies the time of the function performed.
+    ///  Expressed in 24-hour clock time as follows: HHMM, or HHMMSS, or
+    /// HHMMSSD, or HHMMSSDD, where H = hours (00-23), M = minutes (00-59), S = integer
+    /// seconds (00-59) and DD = decimal seconds; decimal seconds are expressed as follows: D
+    /// = tenths (0-9) and DD = hundredths (00-99)
     #[serde(borrow)]
     pub time: Cow<'a, str>,
+    /// An ID code for this specific control group. Should
+    /// be the same in the GE (group end) segment.
     #[serde(borrow)]
     pub group_control_number: Cow<'a, str>,
+    /// Code identifying the issuer of the standard
     #[serde(borrow)]
     pub responsible_agency_code: Cow<'a, str>,
+    ///  Code indicating the version, release, subrelease, and industry identifier of the
+    ///  EDI standard being used, including the GS and GE segments; If code DE455 in GS
+    /// segment is X, then in DE 480 positions 1-3 are the version number; positions 4-6 are the
+    /// release and subrelease, level of the version; and positions 7-12 are the industry or trade
+    /// association identifiers (optionally assigned by user); if code in DE455 in GS segment is T,
+    /// then other formats are allowed
     #[serde(borrow)]
     pub version: Cow<'a, str>,
+    /// The transactions that this functional group contains.
     #[serde(borrow = "'a + 'b")]
     pub transactions: VecDeque<Transaction<'a, 'b>>,
 }
 
 impl<'a, 'b> FunctionalGroup<'a, 'b> {
+    /// Given [SegmentTokens] (where the first token is "GS"), construct a [FunctionalGroup].
     pub fn parse_from_tokens(
         input: SegmentTokens<'a>,
     ) -> Result<FunctionalGroup<'a, 'b>, EdiParseError> {

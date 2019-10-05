@@ -10,6 +10,7 @@ use std::collections::VecDeque;
 pub struct EdiDocument<'a, 'b> {
     // Here I chose a VecDeque because when I output an EDI document, I want to pull from
     // it in a queue style.
+    /// Represents the interchanges (ISA/IEA) held within this document.
     #[serde(borrow = "'a + 'b")]
     pub interchanges: VecDeque<InterchangeControl<'a, 'b>>,
 }

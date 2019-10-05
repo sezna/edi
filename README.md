@@ -1,3 +1,6 @@
+![docs.rs](https://docs.rs/edi/badge.svg)
+![crates.io](https://img.shields.io/crates/v/edi.svg)
+[![Build Status](https://travis-ci.org/sezna/edi.svg?branch=master)](https://travis-ci.org/sezna/edi)
 # Overview
 This is a _work in progress_. It will be released as version 0.1.0 on October 7th, 2019. Until then, use at your own risk, but feel free to file issues.
 ### A quick summary of features

@@ -14,41 +14,75 @@ pub struct InterchangeControl<'a, 'b> {
     // given enough documents of sufficient size and a restrictive enough environment,
     // the space complexity could undesirably grow. This allows for some mitigation
     // and while it isn't zero-copy is at least less-copy.
+    /// Code to identify the type of information in the Authorization Information
+    /// Qualifiers are two-digit prefixes which categorize the following element.
     #[serde(borrow)]
     pub authorization_qualifier: Cow<'a, str>,
+    /// Information used for additional identification or authorization of the
+    /// interchange sender or the data in the interchange; the type of information is set by the
+    /// Authorization Information Qualifier
     #[serde(borrow)]
     pub authorization_information: Cow<'a, str>,
+    /// Code to identify the type of information in the Security Information
+    /// Qualifiers are two-digit prefixes which categorize the following element.
     #[serde(borrow)]
     pub security_qualifier: Cow<'a, str>,
+    /// This is used for identifying the security information about the interchange
+    /// sender or the data in the interchange; the type of information is set by the Security
+    /// Information Qualifier
     #[serde(borrow)]
     pub security_information: Cow<'a, str>,
+    /// Qualifier to designate the system/method of code structure used to designate
+    /// the sender ID.
+    /// Qualifiers are two-digit prefixes which categorize the following element.
     #[serde(borrow)]
     pub sender_qualifier: Cow<'a, str>,
+    /// Identification code published by the sender for other parties to use as the
+    /// receiver ID to route data to them; the sender always codes this value in the sender ID
+    /// element
     #[serde(borrow)]
     pub sender_id: Cow<'a, str>,
+    /// Qualifier to designate the system/method of code structure used to designate
+    /// the receiver ID.
+    /// Qualifiers are two-digit prefixes which categorize the following element.
     #[serde(borrow)]
     pub receiver_qualifier: Cow<'a, str>,
+    /// Identification code published by the receiver of the data; When sending, it is
+    /// used by the sender as their sending ID, thus other parties sending to them will use this as a
+    /// receiving ID to route data to them
     #[serde(borrow)]
     pub receiver_id: Cow<'a, str>,
+    /// Date of the interchange
     #[serde(borrow)]
     pub date: Cow<'a, str>, // chrono::Date?
+    /// Time of the interchange
     #[serde(borrow)]
     pub time: Cow<'a, str>, // chrono::Time?
+    /// Code to identify the agency responsible for the control standard used by the
+    /// message that is enclosed by the interchange header and trailer
     #[serde(borrow)]
     pub standards_id: Cow<'a, str>,
+    /// Code specifying the version number of the interchange control segments
     #[serde(borrow)]
     pub version: Cow<'a, str>, // u64?
+    /// A control number assigned by the interchange sender
     #[serde(borrow)]
     pub interchange_control_number: Cow<'a, str>, // u64?
+    /// Either a 0 or a 1 denoting that acknowledgment is not requested (0) or it is
+    /// requested (1).
     #[serde(borrow)]
     pub acknowledgement_requested: Cow<'a, str>, // bool?  0 for false, 1 for true
+    /// Code to indicate whether data enclosed by this interchange envelope is test ("T"),
+    /// production ("P"), or information ("I"
     #[serde(borrow)]
     pub test_indicator: Cow<'a, str>, // P for production, T for test
+    /// The functional groups contained in this interchange.
     #[serde(borrow = "'a + 'b")]
     pub functional_groups: VecDeque<FunctionalGroup<'a, 'b>>,
 }
 
 impl<'a, 'b> InterchangeControl<'a, 'b> {
+    /// Given [SegmentTokens] (where the first token is "ISA), construct an [InterchangeControl].
     pub fn parse_from_tokens(
         input: SegmentTokens<'a>,
     ) -> Result<InterchangeControl<'a, 'b>, EdiParseError> {
