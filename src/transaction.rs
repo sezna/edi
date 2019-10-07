@@ -38,7 +38,7 @@ lazy_static! {
         let mut schemas_csv = ReaderBuilder::new()
             .has_headers(false)
             .from_path(schemas_path)
-            .expect("failed to open schemas.csv");
+            .expect("Failed to open schemas.csv. Does edi/resources/schemas.csv exist?");
         for record in schemas_csv.records() {
             let record = record.unwrap();
             map.insert(record[0].to_string(), record[1].to_string());
@@ -57,12 +57,13 @@ impl<'a, 'b> Transaction<'a, 'b> {
         // and to check my assumptions.
         edi_assert!(
             elements[0] == "ST",
-            "attempted to parse ST from non-ST segment"
+            "attempted to parse ST from non-ST segment",
+            input
         );
         edi_assert!(
             elements.len() >= 3,
-            "ST segment does not contain enough elements",
-            elements.len()
+            "ST segment does not contain enough elements. At least 3 required",
+            input
         );
 
         let (transaction_code, transaction_set_control_number) =
@@ -88,29 +89,33 @@ impl<'a, 'b> Transaction<'a, 'b> {
     }
 
     /// Enqueue a [GenericSegment] into the transaction.
-    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) {
-        self.segments.push_back(
-            GenericSegment::parse_from_tokens(tokens)
-                .expect("unable to parse generic segment from given tokens"),
-        );
+    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+        self.segments
+            .push_back(GenericSegment::parse_from_tokens(tokens)?);
+        Ok(())
     }
 
     /// Validate this transaction with an SE segment.
     pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
         edi_assert!(
             tokens[0] == "SE",
-            "attempted to validate transaction with non-SE segment"
+            "attempted to validate transaction with non-SE segment",
+            tokens
         );
         // we have to add two here because transaction counts include ST and SE
         edi_assert!(
             str::parse::<usize>(tokens[1]).unwrap() == self.segments.len() + 2,
             "transaction validation failed: incorrect number of segments",
             tokens[1],
-            self.segments.len()
+            self.segments.len(),
+            tokens
         );
         edi_assert!(
             tokens[2] == self.transaction_set_control_number,
-            "transaction validation failed: incorrect transaction ID"
+            "transaction validation failed: incorrect transaction ID",
+            tokens[2],
+            self.transaction_set_control_number,
+            tokens
         );
         Ok(())
     }

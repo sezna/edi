@@ -30,7 +30,7 @@ pub fn loose_parse(input: &str) -> Result<EdiDocument, EdiParseError> {
 
 /// An internal function which is the root of the parsing. It is accessed publicly via [parse] and [loose_parse].
 fn parse_inner(input: &str, loose: bool) -> Result<EdiDocument, EdiParseError> {
-    let document_tokens = tokenize(input).expect("unsupported EDI format");
+    let document_tokens = tokenize(input)?;
 
     // Go through all the segments and parse them either into an interchange control header,
     // functional group header, transaction header, or generic segment. Also verify that
@@ -40,46 +40,40 @@ fn parse_inner(input: &str, loose: bool) -> Result<EdiDocument, EdiParseError> {
     for segment in document_tokens {
         match segment[0] {
             "ISA" => {
-                interchanges.push_back(
-                    InterchangeControl::parse_from_tokens(segment)
-                        .expect("failed to parse interchange header"),
-                );
+                interchanges.push_back(InterchangeControl::parse_from_tokens(segment)?);
             }
             "GS" => {
-                interchanges.back_mut().expect("unable to enqueue functional group when no interchanges have been enqueued").add_functional_group(segment);
+                interchanges.back_mut().expect("unable to enqueue functional group when no interchanges have been enqueued").add_functional_group(segment)?;
             }
             "ST" => {
                 interchanges
                     .back_mut()
                     .expect("unable to enqueue transaction when no interchanges have been enqueued")
-                    .add_transaction(segment);
+                    .add_transaction(segment)?;
             }
             "IEA" => {
                 if !loose {
                     interchanges
                         .back()
                         .expect("unable to validate IEA without initial ISA")
-                        .validate_interchange_control(segment)
-                        .expect("interchange control validation failed");
-                }
+                        .validate_interchange_control(segment)?;
+                };
             }
             "GE" => {
                 if !loose {
                     interchanges
                         .back()
                         .expect("unable to validate GE without interchange")
-                        .validate_functional_group(segment)
-                        .expect("functional group validation failed");
-                }
+                        .validate_functional_group(segment)?;
+                };
             }
             "SE" => {
                 if !loose {
                     interchanges
                         .back()
                         .expect("unable to validate SE without interchange")
-                        .validate_transaction(segment)
-                        .expect("transaction validation failed")
-                }
+                        .validate_transaction(segment)?;
+                };
             }
             _ => {
                 interchanges
@@ -87,7 +81,7 @@ fn parse_inner(input: &str, loose: bool) -> Result<EdiDocument, EdiParseError> {
                     .expect(
                         "unable to enqueue generic segment when no interchanges have been enqueued",
                     )
-                    .add_generic_segment(segment);
+                    .add_generic_segment(segment)?;
             }
         }
     }

@@ -62,12 +62,13 @@ impl<'a, 'b> FunctionalGroup<'a, 'b> {
         // and to check my assumptions.
         edi_assert!(
             elements[0] == "GS",
-            "attempted to parse GS from non-GS segment"
+            "attempted to parse GS from non-GS segment",
+            input
         );
         edi_assert!(
             elements.len() >= 9,
-            "GS segment does not contain enough elements",
-            elements.len()
+            "GS segment does not contain enough elements. At least 9 required",
+            input
         );
         let (
             functional_identifier_code,
@@ -103,18 +104,22 @@ impl<'a, 'b> FunctionalGroup<'a, 'b> {
     }
 
     /// Enqueue a [Transaction] into the group. Subsequent segments will be enqueued into this transaction.
-    pub fn add_transaction(&mut self, tokens: SegmentTokens<'a>) {
-        self.transactions.push_back(
-            Transaction::parse_from_tokens(tokens).expect("failed to parse transaction header"),
-        );
+    pub fn add_transaction(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+        self.transactions
+            .push_back(Transaction::parse_from_tokens(tokens)?);
+        Ok(())
     }
 
     /// Enqueue a [GenericSegment] into the most recently enqueued [Transaction].
-    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) {
-        self.transactions
-            .back_mut()
-            .expect("unable to enqueue generic segment when no transactions have been enqueued")
-            .add_generic_segment(tokens);
+    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+        if let Some(transaction) = self.transactions.back_mut() {
+            transaction.add_generic_segment(tokens)
+        } else {
+            Err(EdiParseError::new(
+                "unable to enqueue generic segment when no transactions have been enqueued",
+                Some(tokens),
+            ))
+        }
     }
 
     /// Verify this [FunctionalGroup] with a GE segment.
@@ -124,25 +129,36 @@ impl<'a, 'b> FunctionalGroup<'a, 'b> {
     ) -> Result<(), EdiParseError> {
         edi_assert!(
             tokens[0] == "GE",
-            "attempted to call GE verification on non-GE segment"
+            "attempted to call GE verification on non-GE segment",
+            tokens
         );
         edi_assert!(
             self.transactions.len() == str::parse::<usize>(tokens[1]).unwrap(),
-            "functional group validation failed: incorrect number of transactions"
+            "functional group validation failed: incorrect number of transactions",
+            self.transactions.len(),
+            str::parse::<usize>(tokens[1]).unwrap(),
+            tokens
         );
         edi_assert!(
             self.group_control_number == tokens[2],
-            "functional group validation failed: mismatched ID"
+            "functional group validation failed: mismatched ID",
+            self.group_control_number,
+            tokens[2],
+            tokens
         );
         Ok(())
     }
 
     /// Validate the latest [Transaction] within this functional group with an SE segment.
     pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
-        self.transactions
-            .back()
-            .expect("unable to validate nonexistent transaction")
-            .validate_transaction(tokens)
+        if let Some(transaction) = self.transactions.back() {
+            transaction.validate_transaction(tokens)
+        } else {
+            Err(EdiParseError::new(
+                "unable to validate nonexistent transaction",
+                Some(tokens),
+            ))
+        }
     }
 }
 

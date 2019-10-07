@@ -14,16 +14,18 @@ pub struct InterchangeControl<'a, 'b> {
     // given enough documents of sufficient size and a restrictive enough environment,
     // the space complexity could undesirably grow. This allows for some mitigation
     // and while it isn't zero-copy is at least less-copy.
-    /// Code to identify the type of information in the Authorization Information
+    /// Code to identify the type of information in the Authorization Information.
+    ///
     /// Qualifiers are two-digit prefixes which categorize the following element.
     #[serde(borrow)]
     pub authorization_qualifier: Cow<'a, str>,
     /// Information used for additional identification or authorization of the
     /// interchange sender or the data in the interchange; the type of information is set by the
-    /// Authorization Information Qualifier
+    /// Authorization Information Qualifier.
     #[serde(borrow)]
     pub authorization_information: Cow<'a, str>,
     /// Code to identify the type of information in the Security Information
+    ///
     /// Qualifiers are two-digit prefixes which categorize the following element.
     #[serde(borrow)]
     pub security_qualifier: Cow<'a, str>,
@@ -34,6 +36,7 @@ pub struct InterchangeControl<'a, 'b> {
     pub security_information: Cow<'a, str>,
     /// Qualifier to designate the system/method of code structure used to designate
     /// the sender ID.
+    ///
     /// Qualifiers are two-digit prefixes which categorize the following element.
     #[serde(borrow)]
     pub sender_qualifier: Cow<'a, str>,
@@ -44,6 +47,7 @@ pub struct InterchangeControl<'a, 'b> {
     pub sender_id: Cow<'a, str>,
     /// Qualifier to designate the system/method of code structure used to designate
     /// the receiver ID.
+    ///
     /// Qualifiers are two-digit prefixes which categorize the following element.
     #[serde(borrow)]
     pub receiver_qualifier: Cow<'a, str>,
@@ -91,12 +95,13 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         // and to check my assumptions.
         edi_assert!(
             elements[0] == "ISA",
-            "attempted to parse ISA from non-ISA segment"
+            "attempted to parse ISA from non-ISA segment",
+            input
         );
         edi_assert!(
             elements.len() >= 16,
-            "ISA segment does not contain enough elements",
-            elements.len()
+            "ISA segment does not contain enough elements. At least 16 required",
+            input
         );
         let (
             authorization_qualifier,
@@ -153,27 +158,34 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
 
     /// Enqueue a [FunctionalGroup] into the interchange. Subsequent [Transaction]s will be inserted into this functional group,
     /// until a new one is enqueued.
-    pub fn add_functional_group(&mut self, tokens: SegmentTokens<'a>) {
-        self.functional_groups.push_back(
-            FunctionalGroup::parse_from_tokens(tokens)
-                .expect("failed to parse functional group header"),
-        );
+    pub fn add_functional_group(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+        self.functional_groups
+            .push_back(FunctionalGroup::parse_from_tokens(tokens)?);
+        Ok(())
     }
 
     /// Enqueue a [Transaction] into the most recently enqueued [FunctionalGroup] in this interchange.
-    pub fn add_transaction(&mut self, tokens: SegmentTokens<'a>) {
-        self.functional_groups
-            .back_mut()
-            .expect("unable to enqueue transaction when no functional groups have been added")
-            .add_transaction(tokens)
+    pub fn add_transaction(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+        if let Some(functional_group) = self.functional_groups.back_mut() {
+            functional_group.add_transaction(tokens)
+        } else {
+            Err(EdiParseError::new(
+                "unable to enqueue transaction when no functional groups have been added",
+                Some(tokens),
+            ))
+        }
     }
 
     /// Enqueue a [GenericSegment] into the most recently enqueued [FunctionalGroup]'s most recently enqueued [Transaction].
-    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) {
-        self.functional_groups
-            .back_mut()
-            .expect("unable to enqueue generic segment when no functional groups have been added")
-            .add_generic_segment(tokens);
+    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+        if let Some(functional_group) = self.functional_groups.back_mut() {
+            functional_group.add_generic_segment(tokens)
+        } else {
+            Err(EdiParseError::new(
+                "unable to enqueue generic segment when no functional groups have been added",
+                Some(tokens),
+            ))
+        }
     }
 
     /// Given the tokens of an IEA segment, or Interchange Control closer, verify that the correct
@@ -184,19 +196,22 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
     ) -> Result<(), EdiParseError> {
         edi_assert!(
             tokens[0] == "IEA",
-            "attempted to verify IEA on non-IEA segment"
+            "attempted to verify IEA on non-IEA segment",
+            tokens
         );
         edi_assert!(
             str::parse::<usize>(&tokens[1].to_string()).unwrap() == self.functional_groups.len(),
             "interchange validation failed: incorrect number of functional groups",
             tokens[1].to_string(),
-            self.functional_groups.len()
+            self.functional_groups.len(),
+            tokens
         );
         edi_assert!(
             tokens[2] == self.interchange_control_number,
             "interchange validation failed: mismatched ID",
             tokens[2],
-            self.interchange_control_number.clone()
+            self.interchange_control_number.clone(),
+            tokens
         );
 
         Ok(())
@@ -207,18 +222,26 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         &self,
         tokens: SegmentTokens<'a>,
     ) -> Result<(), EdiParseError> {
-        self.functional_groups
-            .back()
-            .expect("unable to verify nonexistent functional group")
-            .validate_functional_group(tokens)
+        if let Some(functional_group) = self.functional_groups.back() {
+            functional_group.validate_functional_group(tokens)
+        } else {
+            return Err(EdiParseError::new(
+                "unable to verify nonexistent functional group",
+                Some(tokens),
+            ));
+        }
     }
 
     /// Verify the latest [Transaction] within the latest [FunctionalGroup]
     pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
-        self.functional_groups
-            .back()
-            .expect("unable to verify transaction within nonexistent functional group")
-            .validate_transaction(tokens)
+        if let Some(functional_group) = self.functional_groups.back() {
+            functional_group.validate_transaction(tokens)
+        } else {
+            return Err(EdiParseError::new(
+                "unable to verify transaction within nonexistent functional group",
+                Some(tokens),
+            ));
+        }
     }
 }
 

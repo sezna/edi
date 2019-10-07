@@ -21,7 +21,8 @@ impl<'a> GenericSegment<'a> {
         let elements: Vec<&str> = tokens.iter().map(|x| x.trim()).collect();
         edi_assert!(
             elements.len() >= 2,
-            "at least two elements are required in a segment"
+            "at least two elements are required in a segment",
+            tokens
         );
         let segment_abbreviation = Cow::from(elements[0]);
 

@@ -1,5 +1,3 @@
-
-
 //! # EDI
 //! This crate is for parsing and acting on EDI X12 documents. It exposes two main entry points for parsing:
 //! `loose_parse()` and `parse()`. The strictest parsing mode is `parse()`, which parses a string and constructs
@@ -23,7 +21,7 @@
 //! * [and more...](https://serde.rs/#data-formats)
 //!
 //! # Getting Started
-//! There are examples in the [examples directory](https://github.com/sezna/edi/tree/master/examples). T
+//! There are examples in the [examples directory](https://github.com/sezna/edi/tree/master/examples).
 
 #![deny(missing_docs)]
 pub use edi_document::EdiDocument;
@@ -32,8 +30,6 @@ pub use functional_group::FunctionalGroup;
 pub use generic_segment::GenericSegment;
 pub use interchange_control::InterchangeControl;
 pub use transaction::Transaction;
-
-
 
 #[macro_use]
 mod edi_parse_error;

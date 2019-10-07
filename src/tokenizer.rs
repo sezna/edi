@@ -18,15 +18,21 @@ pub fn tokenize(input: &str) -> Result<DocumentTokens, EdiParseError> {
         (delimiters_str[0], delimiters_str[1], delimiters_str[2]);
     edi_assert!(
         element_delimiter != sub_element_delimiter,
-        "element and subelement delimiters cannot be the same"
+        "element and subelement delimiters cannot be the same",
+        element_delimiter,
+        sub_element_delimiter
     );
     edi_assert!(
         sub_element_delimiter != segment_delimiter,
-        "subelement and segment delimiters cannot be the same"
+        "subelement and segment delimiters cannot be the same",
+        sub_element_delimiter,
+        segment_delimiter
     );
     edi_assert!(
         element_delimiter != segment_delimiter,
-        "element and segment delimiters cannot be the same"
+        "element and segment delimiters cannot be the same",
+        element_delimiter,
+        segment_delimiter
     );
     // Filter out any empty segments caused by newlines.
     let segments: SegmentTokens = input

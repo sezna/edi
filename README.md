@@ -2,7 +2,12 @@
 ![crates.io](https://img.shields.io/crates/v/edi.svg)
 [![Build Status](https://travis-ci.org/sezna/edi.svg?branch=master)](https://travis-ci.org/sezna/edi)
 # Overview
-This is a _work in progress_. It will be released as version 0.1.0 on October 7th, 2019. Until then, use at your own risk, but feel free to file issues.
+_Nota bene_: There are some instances which will cause panics at parse time. Those are still being worked on. The instances in question are:
+* Adding a functional group with no iterchange (encountering a GS segment before an ISA segment)
+* Adding a transaction without a functional group in the interchange (encountering an ST segment before a GS in an interchange)
+* Adding a segment without a transaction (encountering any segment without a containing ST segment)
+
+If you are parsing valid EDI documents, the parser will never panic.
 ### A quick summary of features
 * Provides two top-level parsing functions: `parse` and `loose_parse`. `loose_parse` is less strict on the format of the incoming EDI document.
 * Parses a valid X12 EDI document into a struct called `EdiDocument`.
