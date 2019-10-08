@@ -5,13 +5,11 @@
 // to the count.
 use edi::{loose_parse, parse};
 #[test]
-#[should_panic]
 fn parse_empty_document() {
-    parse("").unwrap();
+    assert!(parse("").is_err());
 }
 
 #[test]
-#[should_panic]
 fn missing_interchange() {
     let input = "GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010~
 ST*850*000000001~
@@ -25,11 +23,10 @@ BEG*****~
 BEG*****~
 SE*10*000000001~
 GE*1*1~";
-    parse(input).unwrap();
+    assert!(parse(input).is_err());
 }
 
 #[test]
-#[should_panic]
 fn incorrect_number_of_segments() {
     let input = "ISA*  *          *  *          *ZZ*SENDERISA      *14*0073268795005  *020226*1534*U*00401*000000001*0*T*>~
 GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010~
@@ -45,10 +42,9 @@ BEG*****~
 SE*11*000000001~
 GE*1*1~
 IEA*1*000000001~"; // (SE is 11 when it should be 10)
-    parse(input).unwrap();
+    assert!(parse(input).is_err());
 }
 #[test]
-#[should_panic]
 fn incorrect_number_of_functional_groups() {
     // this document has two functional groups but the interchange header says there should be only one
     // it also uses newlines as the separator
@@ -95,11 +91,10 @@ SE*18*1004
 GE*1*1320
 IEA*1*000001320";
 
-    parse(test_input).unwrap();
+    assert!(parse(test_input).is_err());
 }
 
 #[test]
-#[should_panic]
 fn missing_functional_group() {
     let test_input = "ISA*01*0000000000*01*0000000000*ZZ*ABCDEFGHIJKLMNO*ZZ*123456789012345*101127*1719*U*00400*000003438*0*P*>
     ST*997*0001
@@ -108,7 +103,7 @@ fn missing_functional_group() {
     SE*4*0001
     IEA*1*000003438";
 
-    parse(test_input).unwrap();
+    assert!(parse(test_input).is_err());
 }
 
 // The below tests should _not_ fail because they are loose parsing and thus allow these inconsistencies.

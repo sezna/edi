@@ -1,6 +1,5 @@
 use crate::tokenizer::SegmentTokens;
 use std::{error, fmt};
-
 /// Represents an error that occured at any point in parsing a document.
 #[derive(Debug, Clone)]
 pub struct EdiParseError {
@@ -33,6 +32,22 @@ impl EdiParseError {
             reason: String::from(reason),
             error_segment,
         }
+    }
+}
+
+/// Since implementing `From<NoneError>` is unstable right now, this is a temporary way to emulate
+/// coercing the `?` (try trait)'s behavior on an `Option` into an [EdiParseError]
+pub fn try_option<T>(
+    maybe_segment: Option<T>,
+    error_segment: &SegmentTokens,
+) -> Result<T, EdiParseError> {
+    if maybe_segment.is_some() {
+        return Ok(maybe_segment.unwrap());
+    } else {
+        return Err(EdiParseError{
+            reason: "EDI file out of order: from out to in, the file must have ISA, GS, ST, and then generic segments".to_string(),
+            error_segment: Some(error_segment.iter().map(|x| x.to_string()).collect())
+        });
     }
 }
 

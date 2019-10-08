@@ -1,4 +1,4 @@
-use crate::edi_parse_error::EdiParseError;
+use crate::edi_parse_error::{try_option, EdiParseError};
 use crate::interchange_control::InterchangeControl;
 use crate::tokenizer::tokenize;
 use serde::{Deserialize, Serialize};
@@ -43,45 +43,30 @@ fn parse_inner(input: &str, loose: bool) -> Result<EdiDocument, EdiParseError> {
                 interchanges.push_back(InterchangeControl::parse_from_tokens(segment)?);
             }
             "GS" => {
-                interchanges.back_mut().expect("unable to enqueue functional group when no interchanges have been enqueued").add_functional_group(segment)?;
+                try_option(interchanges.back_mut(), &segment)?.add_functional_group(segment)?;
             }
             "ST" => {
-                interchanges
-                    .back_mut()
-                    .expect("unable to enqueue transaction when no interchanges have been enqueued")
-                    .add_transaction(segment)?;
+                try_option(interchanges.back_mut(), &segment)?.add_transaction(segment)?;
             }
             "IEA" => {
                 if !loose {
-                    interchanges
-                        .back()
-                        .expect("unable to validate IEA without initial ISA")
+                    try_option(interchanges.back(), &segment)?
                         .validate_interchange_control(segment)?;
                 };
             }
             "GE" => {
                 if !loose {
-                    interchanges
-                        .back()
-                        .expect("unable to validate GE without interchange")
+                    try_option(interchanges.back(), &segment)?
                         .validate_functional_group(segment)?;
                 };
             }
             "SE" => {
                 if !loose {
-                    interchanges
-                        .back()
-                        .expect("unable to validate SE without interchange")
-                        .validate_transaction(segment)?;
+                    try_option(interchanges.back(), &segment)?.validate_transaction(segment)?;
                 };
             }
             _ => {
-                interchanges
-                    .back_mut()
-                    .expect(
-                        "unable to enqueue generic segment when no interchanges have been enqueued",
-                    )
-                    .add_generic_segment(segment)?;
+                try_option(interchanges.back_mut(), &segment)?.add_generic_segment(segment)?;
             }
         }
     }
