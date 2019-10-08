@@ -2,6 +2,7 @@
 ![crates.io](https://img.shields.io/crates/v/edi.svg)
 [![Build Status](https://travis-ci.org/sezna/edi.svg?branch=master)](https://travis-ci.org/sezna/edi)
 # Overview
+[Check the documentation for more details](https://docs.rs/edi).
 ### A quick summary of features
 * Provides two top-level parsing functions: `parse` and `loose_parse`. `loose_parse` is less strict on the format of the incoming EDI document.
 * Parses a valid X12 EDI document into a struct called `EdiDocument`.
