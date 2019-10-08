@@ -1,6 +1,6 @@
 [package]
 name = "edi"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["alex-hansen <ahansen@stackline.com>"]
 edition = "2018"
 license-file = "LICENSE.md"

@@ -1,6 +1,7 @@
 use crate::tokenizer::SegmentTokens;
 use std::{error, fmt};
-/// Represents an error that occured at any point in parsing a document.
+/// Represents an error that occurred at any point in parsing a document.
+/// Contains a reason the error occurred and the segment in which the error occurred.
 #[derive(Debug, Clone)]
 pub struct EdiParseError {
     /// The reason for the error.
@@ -22,6 +23,7 @@ impl error::Error for EdiParseError {
 }
 
 impl EdiParseError {
+    /// Construct a new [EdiParseError].
     pub fn new(reason: &str, error_segment: Option<SegmentTokens>) -> EdiParseError {
         let error_segment = if let Some(error_segment) = error_segment {
             Some(error_segment.iter().map(|x| x.to_string()).collect())
