@@ -16,6 +16,7 @@ pub struct GenericSegment<'a> {
 }
 
 impl<'a> GenericSegment<'a> {
+    #[doc(skip)]
     /// Given [SegmentTokens], construct a [GenericSegment].
     pub fn parse_from_tokens(tokens: SegmentTokens<'a>) -> Result<GenericSegment, EdiParseError> {
         let elements: Vec<&str> = tokens.iter().map(|x| x.trim()).collect();

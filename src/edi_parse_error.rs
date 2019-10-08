@@ -23,6 +23,7 @@ impl error::Error for EdiParseError {
 }
 
 impl EdiParseError {
+    #[doc(skip)]
     /// Construct a new [EdiParseError].
     pub fn new(reason: &str, error_segment: Option<SegmentTokens>) -> EdiParseError {
         let error_segment = if let Some(error_segment) = error_segment {

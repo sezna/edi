@@ -48,6 +48,7 @@ lazy_static! {
 }
 
 impl<'a, 'b> Transaction<'a, 'b> {
+    #[doc(skip)]
     /// Given [SegmentTokens] (where the first token is "ST"), construct a [Transaction].
     pub fn parse_from_tokens(
         input: SegmentTokens<'a>,
@@ -88,6 +89,7 @@ impl<'a, 'b> Transaction<'a, 'b> {
         })
     }
 
+    #[doc(skip)]
     /// Enqueue a [GenericSegment] into the transaction.
     pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
         self.segments
@@ -95,6 +97,7 @@ impl<'a, 'b> Transaction<'a, 'b> {
         Ok(())
     }
 
+    #[doc(skip)]
     /// Validate this transaction with an SE segment.
     pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
         edi_assert!(

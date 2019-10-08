@@ -54,6 +54,7 @@ pub struct FunctionalGroup<'a, 'b> {
 
 impl<'a, 'b> FunctionalGroup<'a, 'b> {
     /// Given [SegmentTokens] (where the first token is "GS"), construct a [FunctionalGroup].
+    #[doc(skip)]
     pub fn parse_from_tokens(
         input: SegmentTokens<'a>,
     ) -> Result<FunctionalGroup<'a, 'b>, EdiParseError> {
@@ -103,6 +104,7 @@ impl<'a, 'b> FunctionalGroup<'a, 'b> {
         })
     }
 
+    #[doc(skip)]
     /// Enqueue a [Transaction] into the group. Subsequent segments will be enqueued into this transaction.
     pub fn add_transaction(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
         self.transactions
@@ -110,6 +112,7 @@ impl<'a, 'b> FunctionalGroup<'a, 'b> {
         Ok(())
     }
 
+    #[doc(skip)]
     /// Enqueue a [GenericSegment] into the most recently enqueued [Transaction].
     pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
         if let Some(transaction) = self.transactions.back_mut() {
@@ -122,6 +125,7 @@ impl<'a, 'b> FunctionalGroup<'a, 'b> {
         }
     }
 
+    #[doc(skip)]
     /// Verify this [FunctionalGroup] with a GE segment.
     pub fn validate_functional_group(
         &self,
@@ -149,6 +153,7 @@ impl<'a, 'b> FunctionalGroup<'a, 'b> {
         Ok(())
     }
 
+    #[doc(skip)]
     /// Validate the latest [Transaction] within this functional group with an SE segment.
     pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
         if let Some(transaction) = self.transactions.back() {

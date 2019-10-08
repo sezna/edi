@@ -156,6 +156,7 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         })
     }
 
+    #[doc(skip)]
     /// Enqueue a [FunctionalGroup] into the interchange. Subsequent [Transaction]s will be inserted into this functional group,
     /// until a new one is enqueued.
     pub fn add_functional_group(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
@@ -164,6 +165,7 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         Ok(())
     }
 
+    #[doc(skip)]
     /// Enqueue a [Transaction] into the most recently enqueued [FunctionalGroup] in this interchange.
     pub fn add_transaction(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
         if let Some(functional_group) = self.functional_groups.back_mut() {
@@ -176,6 +178,7 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         }
     }
 
+    #[doc(skip)]
     /// Enqueue a [GenericSegment] into the most recently enqueued [FunctionalGroup]'s most recently enqueued [Transaction].
     pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
         if let Some(functional_group) = self.functional_groups.back_mut() {
@@ -188,6 +191,7 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         }
     }
 
+    #[doc(skip)]
     /// Given the tokens of an IEA segment, or Interchange Control closer, verify that the correct
     /// number of control groups have been given.
     pub fn validate_interchange_control(
@@ -217,6 +221,7 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         Ok(())
     }
 
+    #[doc(skip)]
     /// Verify the latest [FunctionalGroup] with a GE segment.
     pub fn validate_functional_group(
         &self,
@@ -232,6 +237,7 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         }
     }
 
+    #[doc(skip)]
     /// Verify the latest [Transaction] within the latest [FunctionalGroup]
     pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
         if let Some(functional_group) = self.functional_groups.back() {
