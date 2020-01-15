@@ -48,9 +48,8 @@ lazy_static! {
 }
 
 impl<'a, 'b> Transaction<'a, 'b> {
-    #[doc(skip)]
     /// Given [SegmentTokens] (where the first token is "ST"), construct a [Transaction].
-    pub fn parse_from_tokens(
+    pub(crate) fn parse_from_tokens(
         input: SegmentTokens<'a>,
     ) -> Result<Transaction<'a, 'b>, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
@@ -89,17 +88,21 @@ impl<'a, 'b> Transaction<'a, 'b> {
         })
     }
 
-    #[doc(skip)]
-    /// Enqueue a [GenericSegment] into the transaction.
-    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+    /// Enqueue a [GenericSegment](struct.GenericSegment.html) into the transaction.
+    pub(crate) fn add_generic_segment(
+        &mut self,
+        tokens: SegmentTokens<'a>,
+    ) -> Result<(), EdiParseError> {
         self.segments
             .push_back(GenericSegment::parse_from_tokens(tokens)?);
         Ok(())
     }
 
-    #[doc(skip)]
     /// Validate this transaction with an SE segment.
-    pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+    pub(crate) fn validate_transaction(
+        &self,
+        tokens: SegmentTokens<'a>,
+    ) -> Result<(), EdiParseError> {
         edi_assert!(
             tokens[0] == "SE",
             "attempted to validate transaction with non-SE segment",

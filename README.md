@@ -11,6 +11,9 @@
 * `EdiDocument` and all data it contains implement `Serialize` and `Deserialize` from `serde`, so zero-copy serialization and deserialization to any serde-able format is supported (this includes json).
 * `EdiDocument`'s fields are all public and it can be navigated like any other struct for simplicity
 
+See the [examples directory](https://github.com/sezna/edi/tree/master/examples) for an example.
+
+
 ### A quick summary of limitations
 * Cannot accurately determine segment types, as that requires an implementation guide from the individual transactor
 * Cannot detect loops for the same reason as above

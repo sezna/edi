@@ -8,7 +8,7 @@ pub type SegmentTokens<'a> = Vec<&'a str>;
 /// If an element has subelements, they are not separated into separate tokens. It also performs some basic
 /// sanity checks to see if the input is of the format we are expecting and validates that all ISA/GS openers
 /// are closed.
-pub fn tokenize(input: &str) -> Result<DocumentTokens, EdiParseError> {
+pub(crate) fn tokenize(input: &str) -> Result<DocumentTokens, EdiParseError> {
     edi_assert!(
         input.len() >= 106,
         "input not long enough to contain ISA header delimiters"

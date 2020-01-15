@@ -77,17 +77,17 @@ pub struct InterchangeControl<'a, 'b> {
     #[serde(borrow)]
     pub acknowledgement_requested: Cow<'a, str>, // bool?  0 for false, 1 for true
     /// Code to indicate whether data enclosed by this interchange envelope is test ("T"),
-    /// production ("P"), or information ("I"
+    /// production ("P"), or information ("I").
     #[serde(borrow)]
     pub test_indicator: Cow<'a, str>, // P for production, T for test
-    /// The functional groups contained in this interchange.
+    /// The [FunctionalGroups](struct.FunctionalGroup.html) contained in this interchange.
     #[serde(borrow = "'a + 'b")]
     pub functional_groups: VecDeque<FunctionalGroup<'a, 'b>>,
 }
 
 impl<'a, 'b> InterchangeControl<'a, 'b> {
-    /// Given [SegmentTokens] (where the first token is "ISA), construct an [InterchangeControl].
-    pub fn parse_from_tokens(
+    /// Given [SegmentTokens](struct.SegmentTokens.html) (where the first token is "ISA"), construct an [InterchangeControl].
+    pub(crate) fn parse_from_tokens(
         input: SegmentTokens<'a>,
     ) -> Result<InterchangeControl<'a, 'b>, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
@@ -156,18 +156,22 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         })
     }
 
-    #[doc(skip)]
     /// Enqueue a [FunctionalGroup] into the interchange. Subsequent [Transaction]s will be inserted into this functional group,
     /// until a new one is enqueued.
-    pub fn add_functional_group(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+    pub(crate) fn add_functional_group(
+        &mut self,
+        tokens: SegmentTokens<'a>,
+    ) -> Result<(), EdiParseError> {
         self.functional_groups
             .push_back(FunctionalGroup::parse_from_tokens(tokens)?);
         Ok(())
     }
 
-    #[doc(skip)]
     /// Enqueue a [Transaction] into the most recently enqueued [FunctionalGroup] in this interchange.
-    pub fn add_transaction(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+    pub(crate) fn add_transaction(
+        &mut self,
+        tokens: SegmentTokens<'a>,
+    ) -> Result<(), EdiParseError> {
         if let Some(functional_group) = self.functional_groups.back_mut() {
             functional_group.add_transaction(tokens)
         } else {
@@ -178,9 +182,11 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         }
     }
 
-    #[doc(skip)]
-    /// Enqueue a [GenericSegment] into the most recently enqueued [FunctionalGroup]'s most recently enqueued [Transaction].
-    pub fn add_generic_segment(&mut self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+    /// Enqueue a [GenericSegment](struct.GenericSegment.html) into the most recently enqueued [FunctionalGroup]'s most recently enqueued [Transaction](struct.Transaction.html).
+    pub(crate) fn add_generic_segment(
+        &mut self,
+        tokens: SegmentTokens<'a>,
+    ) -> Result<(), EdiParseError> {
         if let Some(functional_group) = self.functional_groups.back_mut() {
             functional_group.add_generic_segment(tokens)
         } else {
@@ -191,10 +197,9 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         }
     }
 
-    #[doc(skip)]
     /// Given the tokens of an IEA segment, or Interchange Control closer, verify that the correct
     /// number of control groups have been given.
-    pub fn validate_interchange_control(
+    pub(crate) fn validate_interchange_control(
         &self,
         tokens: SegmentTokens<'a>,
     ) -> Result<(), EdiParseError> {
@@ -221,9 +226,8 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         Ok(())
     }
 
-    #[doc(skip)]
     /// Verify the latest [FunctionalGroup] with a GE segment.
-    pub fn validate_functional_group(
+    pub(crate) fn validate_functional_group(
         &self,
         tokens: SegmentTokens<'a>,
     ) -> Result<(), EdiParseError> {
@@ -237,9 +241,11 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
         }
     }
 
-    #[doc(skip)]
-    /// Verify the latest [Transaction] within the latest [FunctionalGroup]
-    pub fn validate_transaction(&self, tokens: SegmentTokens<'a>) -> Result<(), EdiParseError> {
+    /// Verify the latest [Transaction](struct.Transaction.html) within the latest [FunctionalGroup]
+    pub(crate) fn validate_transaction(
+        &self,
+        tokens: SegmentTokens<'a>,
+    ) -> Result<(), EdiParseError> {
         if let Some(functional_group) = self.functional_groups.back() {
             functional_group.validate_transaction(tokens)
         } else {

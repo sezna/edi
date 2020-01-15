@@ -26,11 +26,11 @@
 #![deny(missing_docs)]
 pub use edi_document::EdiDocument;
 pub use edi_document::{loose_parse, parse};
+pub use edi_parse_error::EdiParseError;
 pub use functional_group::FunctionalGroup;
 pub use generic_segment::GenericSegment;
 pub use interchange_control::InterchangeControl;
 pub use transaction::Transaction;
-pub use edi_parse_error::EdiParseError;
 
 #[macro_use]
 mod edi_parse_error;
