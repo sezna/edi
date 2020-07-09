@@ -21,6 +21,27 @@ pub struct EdiDocument<'a, 'b> {
     pub element_delimiter: char,
 }
 
+impl EdiDocument<'_, '_> {
+    /// Turns this [EdiDocument] into an ANSI x12 string.
+    pub fn to_x12_string(&self) -> String {
+        let mut buffer = String::new();
+        let mut idx = 0;
+        for interchange in self.interchanges.iter() {
+            if idx > 0 {
+                buffer.push(self.segment_delimiter);
+            }
+            buffer.push_str(&interchange.to_x12_string(
+                self.segment_delimiter,
+                self.element_delimiter,
+                self.sub_element_delimiter,
+            ));
+            idx += 1;
+        }
+
+        buffer
+    }
+}
+
 /// This is the main entry point to the crate. Parse an input str and output either
 /// an [EdiParseError] or a resulting [EdiDocument].
 pub fn parse(input: &str) -> Result<EdiDocument, EdiParseError> {

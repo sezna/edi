@@ -113,7 +113,7 @@ impl<'a, 'b> Transaction<'a, 'b> {
             str::parse::<usize>(tokens[1]).unwrap() == self.segments.len() + 2,
             "transaction validation failed: incorrect number of segments",
             tokens[1],
-            self.segments.len(),
+            self.segments.len() + 2,
             tokens
         );
         edi_assert!(
@@ -149,7 +149,7 @@ impl<'a, 'b> Transaction<'a, 'b> {
 
         let mut closer = "SE".to_string();
         closer.push(element_delimiter);
-        closer.push_str(&self.segments.len().to_string());
+        closer.push_str(&(self.segments.len() + 2).to_string()); // +2 because the count includes the ST and SE segments
         closer.push(element_delimiter);
         closer.push_str(&self.transaction_set_control_number.clone());
 
@@ -192,7 +192,7 @@ fn transaction_to_string() {
 
     assert_eq!(
         transaction.to_x12_string('~', '*'),
-        "ST*140*100000001*~BGN*20*TEST_ID*200615*0000~BGN*15*OTHER_TEST_ID***END~SE*2*100000001"
+        "ST*140*100000001*~BGN*20*TEST_ID*200615*0000~BGN*15*OTHER_TEST_ID***END~SE*4*100000001"
     );
 }
 

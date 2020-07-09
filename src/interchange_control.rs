@@ -255,6 +255,146 @@ impl<'a, 'b> InterchangeControl<'a, 'b> {
             ));
         }
     }
+    /// Converts this [InterchangeControl] into an ANSI x12 string for use in an EDI document.
+    pub fn to_x12_string(
+        &self,
+        segment_delimiter: char,
+        element_delimiter: char,
+        sub_element_separator: char,
+    ) -> String {
+        let mut buffer = String::from("ISA");
+        let isa_01 = pad_right(&self.authorization_qualifier, 2);
+        let isa_02 = pad_right(&self.authorization_information, 10);
+        let isa_03 = pad_right(&self.security_qualifier, 2);
+        let isa_04 = pad_right(&self.security_information, 10);
+        let isa_05 = pad_right(&self.sender_qualifier, 2);
+        let isa_06 = pad_right(&self.sender_id, 15);
+        let isa_07 = pad_right(&self.receiver_qualifier, 2);
+        let isa_08 = pad_right(&self.receiver_id, 15);
+        let isa_09 = pad_right(&self.date, 6);
+        let isa_10 = pad_right(&self.time, 4);
+        let isa_11 = pad_right(&self.standards_id, 1);
+        let isa_12 = pad_right(&self.version, 5);
+        let isa_13 = pad_right(&self.interchange_control_number, 9);
+        let isa_14 = pad_right(&self.acknowledgement_requested, 1);
+        let isa_15 = pad_right(&self.test_indicator, 1);
+        let isa_16 = sub_element_separator.to_string();
+
+        [
+            isa_01, isa_02, isa_03, isa_04, isa_05, isa_06, isa_07, isa_08, isa_09, isa_10, isa_11,
+            isa_12, isa_13, isa_14, isa_15, isa_16,
+        ]
+        .iter()
+        .for_each(|part| {
+            buffer.push(element_delimiter);
+            buffer.push_str(part);
+        });
+
+        let functional_groups =
+            self.functional_groups
+                .iter()
+                .fold(String::new(), |mut acc, group| {
+                    acc.push(segment_delimiter);
+                    acc.push_str(&group.to_x12_string(segment_delimiter, element_delimiter));
+                    acc
+                });
+
+        buffer.push_str(&functional_groups);
+        buffer.push(segment_delimiter);
+        buffer.push_str("IEA");
+        buffer.push(element_delimiter);
+        buffer.push_str(&self.functional_groups.len().to_string());
+        buffer.push(element_delimiter);
+        buffer.push_str(&self.interchange_control_number);
+        buffer
+    }
+}
+
+fn pad_right(input: &str, desired_length: u8) -> String {
+    let mut buffer = input.to_string();
+    for _ in buffer.len() as u8..desired_length {
+        buffer.push(' ');
+    }
+    buffer
+}
+
+#[test]
+fn test_isa_to_string() {
+    use crate::{GenericSegment, Transaction};
+    use std::iter::FromIterator;
+    let segments = VecDeque::from_iter(
+        vec![
+            GenericSegment {
+                segment_abbreviation: Cow::from("BGN"),
+                elements: vec!["20", "TEST_ID", "200615", "0000"]
+                    .iter()
+                    .map(|x| Cow::from(*x))
+                    .collect::<VecDeque<Cow<str>>>(),
+            },
+            GenericSegment {
+                segment_abbreviation: Cow::from("BGN"),
+                elements: vec!["15", "OTHER_TEST_ID", "", "", "END"]
+                    .iter()
+                    .map(|x| Cow::from(*x))
+                    .collect::<VecDeque<Cow<str>>>(),
+            },
+        ]
+        .into_iter(),
+    );
+    let transaction = Transaction {
+        transaction_code: Cow::from("140"),
+        transaction_name: "",
+        transaction_set_control_number: Cow::from("100000001"),
+        implementation_convention_reference: None,
+        segments: segments,
+    };
+
+    let functional_group = FunctionalGroup {
+        functional_identifier_code: Cow::from("PO"),
+        application_sender_code: Cow::from("SENDERGS"),
+        application_receiver_code: Cow::from("007326879"),
+        date: Cow::from("20020226"),
+        time: Cow::from("1534"),
+        group_control_number: Cow::from("1"),
+        responsible_agency_code: Cow::from("X"),
+        version: Cow::from("004010"),
+        transactions: VecDeque::from_iter(vec![transaction].into_iter()),
+    };
+
+    let interchange = InterchangeControl {
+        authorization_qualifier: Cow::from("00"),
+        authorization_information: Cow::from(""),
+        security_qualifier: Cow::from("00"),
+        security_information: Cow::from(""),
+        sender_qualifier: Cow::from("ZZ"),
+        sender_id: Cow::from("SENDERISA"),
+        receiver_qualifier: Cow::from("14"),
+        receiver_id: Cow::from("0073268795005"),
+        date: Cow::from("020226"),
+        time: Cow::from("1534"),
+        standards_id: Cow::from("U"),
+        version: Cow::from("00401"),
+        interchange_control_number: Cow::from("000000001"),
+        acknowledgement_requested: Cow::from("0"),
+        test_indicator: Cow::from("T"),
+        functional_groups: VecDeque::from_iter(vec![functional_group].into_iter()),
+    };
+
+    assert_eq!(interchange.to_x12_string('~', '*', '>'), "ISA*00*          *00*          *ZZ*SENDERISA      *14*0073268795005  *020226*1534*U*00401*000000001*0*T*>~GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010~ST*140*100000001*~BGN*20*TEST_ID*200615*0000~BGN*15*OTHER_TEST_ID***END~SE*4*100000001~GE*1*1~IEA*1*000000001");
+}
+
+#[test]
+fn test_pad_right() {
+    let input = "a";
+    let output = pad_right(input, 10);
+    assert_eq!(output.len(), 10);
+}
+
+#[test]
+fn test_pad_right_2() {
+    let input = "abcde";
+    let output = pad_right(input, 10);
+    assert_eq!(output.len(), 10);
 }
 
 #[test]

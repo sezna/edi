@@ -20,8 +20,3 @@ See the [examples directory](https://github.com/sezna/edi/tree/master/examples) 
 * Only supports standard X12 EDI
 
 
-# Roadmap
-  * benches to identify regressions
-  * output back into EDI with proper padding in the ISA segment
-  * iterator over segments for the frequent cases in which there's only one transaction/functional group/interchange (EdiDocument.segments_iter() -> SegmentIter?)
-    * to_string(delimiters) is needed to output the edi document

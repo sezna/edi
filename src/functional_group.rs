@@ -172,7 +172,7 @@ impl<'a, 'b> FunctionalGroup<'a, 'b> {
 
     /// Converts this functional group into an ANSI x12 string for use in an EDI document.
     pub fn to_x12_string(&self, segment_delimiter: char, element_delimiter: char) -> String {
-        let mut header = String::from("GS");
+        let header = String::from("GS");
         let elements_of_gs = vec![
             self.functional_identifier_code.clone(),
             self.application_sender_code.clone(),
@@ -200,6 +200,14 @@ impl<'a, 'b> FunctionalGroup<'a, 'b> {
 
         buffer.push_str(&transactions);
 
+        let mut closer = String::from("GE");
+        closer.push(element_delimiter);
+        closer.push_str(&self.transactions.len().to_string());
+        closer.push(element_delimiter);
+        closer.push_str(&self.group_control_number);
+
+        buffer.push(segment_delimiter);
+        buffer.push_str(&closer);
         buffer
     }
 }
@@ -246,7 +254,7 @@ fn functional_group_to_string() {
         version: Cow::from("004010"),
         transactions: VecDeque::from_iter(vec![transaction].into_iter()),
     };
-    assert_eq!(functional_group.to_x12_string('~', '>'), "");
+    assert_eq!(functional_group.to_x12_string('\n', '*'), "GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010\nST*140*100000001*\nBGN*20*TEST_ID*200615*0000\nBGN*15*OTHER_TEST_ID***END\nSE*4*100000001\nGE*1*1");
 }
 
 #[test]
