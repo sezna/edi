@@ -125,6 +125,75 @@ impl<'a, 'b> Transaction<'a, 'b> {
         );
         Ok(())
     }
+
+    /// Converts this [Transaction] into an ANSI x12 string to be used in an EDI document.
+    pub fn to_x12_string(&self, segment_delimiter: char, element_delimiter: char) -> String {
+        let mut header = "ST".to_string();
+        header.push(element_delimiter);
+        header.push_str(&self.transaction_code);
+        header.push(element_delimiter);
+        header.push_str(&self.transaction_set_control_number);
+        header.push(element_delimiter);
+        header.push_str(
+            &self
+                .implementation_convention_reference
+                .clone()
+                .unwrap_or(Cow::Borrowed("")),
+        );
+
+        let mut final_string = self.segments.iter().fold(header, |mut acc, segment| {
+            acc.push(segment_delimiter);
+            acc.push_str(&segment.to_x12_string(element_delimiter));
+            acc
+        });
+
+        let mut closer = "SE".to_string();
+        closer.push(element_delimiter);
+        closer.push_str(&self.segments.len().to_string());
+        closer.push(element_delimiter);
+        closer.push_str(&self.transaction_set_control_number.clone());
+
+        final_string.push(segment_delimiter);
+        final_string.push_str(&closer);
+
+        final_string
+    }
+}
+
+#[test]
+fn transaction_to_string() {
+    use std::iter::FromIterator;
+    let segments = VecDeque::from_iter(
+        vec![
+            GenericSegment {
+                segment_abbreviation: Cow::from("BGN"),
+                elements: vec!["20", "TEST_ID", "200615", "0000"]
+                    .iter()
+                    .map(|x| Cow::from(*x))
+                    .collect::<VecDeque<Cow<str>>>(),
+            },
+            GenericSegment {
+                segment_abbreviation: Cow::from("BGN"),
+                elements: vec!["15", "OTHER_TEST_ID", "", "", "END"]
+                    .iter()
+                    .map(|x| Cow::from(*x))
+                    .collect::<VecDeque<Cow<str>>>(),
+            },
+        ]
+        .into_iter(),
+    );
+    let transaction = Transaction {
+        transaction_code: Cow::from("140"),
+        transaction_name: "",
+        transaction_set_control_number: Cow::from("100000001"),
+        implementation_convention_reference: None,
+        segments: segments,
+    };
+
+    assert_eq!(
+        transaction.to_x12_string('~', '*'),
+        "ST*140*100000001*~BGN*20*TEST_ID*200615*0000~BGN*15*OTHER_TEST_ID***END~SE*2*100000001"
+    );
 }
 
 #[test]

@@ -40,6 +40,31 @@ impl<'a> GenericSegment<'a> {
             elements,
         })
     }
+
+    /// Converts a single generic segment into an ANSI x12 compliant string to be used in an EDI
+    /// document.
+    pub fn to_x12_string(&self, element_delimiter: char) -> String {
+        self.elements
+            .iter()
+            .fold(self.segment_abbreviation.to_string(), |mut acc, s| {
+                acc.push(element_delimiter);
+                acc.push_str(s);
+                acc
+            })
+    }
+}
+
+#[test]
+fn convert_generic_segment_to_string() {
+    let segment = GenericSegment {
+        segment_abbreviation: Cow::from("BGN"),
+        elements: vec!["20", "TEST_ID", "200615", "0000"]
+            .iter()
+            .map(|x| Cow::from(*x))
+            .collect::<VecDeque<Cow<str>>>(),
+    };
+
+    assert_eq!(segment.to_x12_string('*'), "BGN*20*TEST_ID*200615*0000");
 }
 
 #[test]

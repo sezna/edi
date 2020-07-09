@@ -4,11 +4,18 @@ pub type DocumentTokens<'a> = Vec<SegmentTokens<'a>>;
 /// The type that represents an individual segment's tokens.
 pub type SegmentTokens<'a> = Vec<&'a str>;
 
+pub(crate) struct TokenizeResult<'a> {
+    pub(crate) element_delimiter: char,
+    pub(crate) sub_element_delimiter: char,
+    pub(crate) segment_delimiter: char,
+    pub(crate) tokens: DocumentTokens<'a>,
+}
+
 /// The input is the entire EDI document string, and the output is a 2d array of edi segments and their elements.
 /// If an element has subelements, they are not separated into separate tokens. It also performs some basic
 /// sanity checks to see if the input is of the format we are expecting and validates that all ISA/GS openers
 /// are closed.
-pub(crate) fn tokenize(input: &str) -> Result<DocumentTokens, EdiParseError> {
+pub(crate) fn tokenize<'a>(input: &'a str) -> Result<TokenizeResult<'a>, EdiParseError> {
     edi_assert!(
         input.len() >= 106,
         "input not long enough to contain ISA header delimiters"
@@ -45,7 +52,12 @@ pub(crate) fn tokenize(input: &str) -> Result<DocumentTokens, EdiParseError> {
         .map(|x| x.split(element_delimiter).collect::<Vec<&str>>())
         .collect();
 
-    Ok(tokens)
+    Ok(TokenizeResult {
+        tokens,
+        element_delimiter,
+        sub_element_delimiter,
+        segment_delimiter,
+    })
 }
 
 // I tend to put individual unit tests inside the file they belong to, and E2E/integration tests in the tests directory.
@@ -63,9 +75,12 @@ SE*35*000000001~
 GE*1*1~
 IEA*1*000000001~";
 
-    let tokens = tokenize(test_input).unwrap();
-    assert_eq!(tokens.len(), 11);
-    assert_eq!(tokens[0].len(), 17)
+    let res = tokenize(test_input).unwrap();
+    assert_eq!(res.tokens.len(), 11);
+    assert_eq!(res.tokens[0].len(), 17);
+    assert_eq!(res.element_delimiter, '*');
+    assert_eq!(res.sub_element_delimiter, '>');
+    assert_eq!(res.segment_delimiter, '~');
 }
 
 #[test]

@@ -13,6 +13,12 @@ pub struct EdiDocument<'a, 'b> {
     /// Represents the interchanges (ISA/IEA) held within this document.
     #[serde(borrow = "'a + 'b")]
     pub interchanges: VecDeque<InterchangeControl<'a, 'b>>,
+    /// Represents the separator between segments in the EDI document.
+    pub segment_delimiter: char,
+    /// Represents the separator between sub elements in the EDI document.
+    pub sub_element_delimiter: char,
+    /// Represents the separator between elements in the EDI document.
+    pub element_delimiter: char,
 }
 
 /// This is the main entry point to the crate. Parse an input str and output either
@@ -30,7 +36,8 @@ pub fn loose_parse(input: &str) -> Result<EdiDocument, EdiParseError> {
 
 /// An internal function which is the root of the parsing. It is accessed publicly via [parse] and [loose_parse].
 fn parse_inner(input: &str, loose: bool) -> Result<EdiDocument, EdiParseError> {
-    let document_tokens = tokenize(input)?;
+    let tokenize_result = tokenize(input)?;
+    let document_tokens = tokenize_result.tokens;
 
     // Go through all the segments and parse them either into an interchange control header,
     // functional group header, transaction header, or generic segment. Also verify that
@@ -71,5 +78,10 @@ fn parse_inner(input: &str, loose: bool) -> Result<EdiDocument, EdiParseError> {
         }
     }
 
-    return Ok(EdiDocument { interchanges });
+    return Ok(EdiDocument {
+        interchanges,
+        element_delimiter: tokenize_result.element_delimiter,
+        sub_element_delimiter: tokenize_result.sub_element_delimiter,
+        segment_delimiter: tokenize_result.segment_delimiter,
+    });
 }
