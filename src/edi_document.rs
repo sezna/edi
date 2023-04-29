@@ -7,12 +7,12 @@ use std::collections::VecDeque;
 /// Represents an entire parsed EDI document with both the envelope (i.e. metadata) and
 /// the data segments.
 #[derive(Serialize, Deserialize)]
-pub struct EdiDocument<'a, 'b> {
+pub struct EdiDocument<'a> {
     // Here I chose a VecDeque because when I output an EDI document, I want to pull from
     // it in a queue style.
     /// Represents the interchanges (ISA/IEA) held within this document.
-    #[serde(borrow = "'a + 'b")]
-    pub interchanges: VecDeque<InterchangeControl<'a, 'b>>,
+    #[serde(borrow = "'a")]
+    pub interchanges: VecDeque<InterchangeControl<'a>>,
     /// Represents the separator between segments in the EDI document.
     pub segment_delimiter: char,
     /// Represents the separator between sub elements in the EDI document.
@@ -21,7 +21,7 @@ pub struct EdiDocument<'a, 'b> {
     pub element_delimiter: char,
 }
 
-impl EdiDocument<'_, '_> {
+impl EdiDocument<'_> {
     /// Turns this [EdiDocument] into an ANSI x12 string.
     pub fn to_x12_string(&self) -> String {
         let mut buffer = String::new();

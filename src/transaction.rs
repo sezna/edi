@@ -10,13 +10,13 @@ use std::collections::{HashMap, VecDeque};
 /// Represents a transaction in an EDI document. A transaction is initialized with an ST segment
 /// and ended with an SE segment.
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
-pub struct Transaction<'a, 'b> {
+pub struct Transaction<'a> {
     /// The numeric code which represents the type of transaction.
     #[serde(borrow)]
     pub transaction_code: Cow<'a, str>,
     /// The name of the transaction type in human-readable form.
     #[serde(borrow)]
-    pub transaction_name: &'b str, // not a Cow because it is a reference to a HashMap value
+    pub transaction_name: Cow<'a, str>, // not a Cow because it is a reference to a HashMap value
     /// Each transaction within a functional group also has a control number.
     /// Typically, trading partners use a number relative to the functional group in which they are contained.
     #[serde(borrow)]
@@ -47,11 +47,11 @@ lazy_static! {
     };
 }
 
-impl<'a, 'b> Transaction<'a, 'b> {
+impl<'a> Transaction<'a> {
     /// Given [SegmentTokens] (where the first token is "ST"), construct a [Transaction].
     pub(crate) fn parse_from_tokens(
         input: SegmentTokens<'a>,
-    ) -> Result<Transaction<'a, 'b>, EdiParseError> {
+    ) -> Result<Transaction<'a>, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
@@ -81,7 +81,7 @@ impl<'a, 'b> Transaction<'a, 'b> {
 
         Ok(Transaction {
             transaction_code,
-            transaction_name,
+            transaction_name: Cow::from(transaction_name),
             transaction_set_control_number,
             implementation_convention_reference,
             segments: VecDeque::new(),
@@ -184,7 +184,7 @@ fn transaction_to_string() {
     );
     let transaction = Transaction {
         transaction_code: Cow::from("140"),
-        transaction_name: "",
+        transaction_name: Cow::from(""),
         transaction_set_control_number: Cow::from("100000001"),
         implementation_convention_reference: None,
         segments: segments,
@@ -200,7 +200,7 @@ fn transaction_to_string() {
 fn construct_transaction() {
     let expected_result = Transaction {
         transaction_code: Cow::from("850"),
-        transaction_name: SCHEMAS.get(&"850".to_string()).unwrap(), // should be "Purchase Order"
+        transaction_name: Cow::from(SCHEMAS.get(&"850".to_string()).unwrap()), // should be "Purchase Order"
         transaction_set_control_number: Cow::from("000000001"),
         implementation_convention_reference: None,
         segments: VecDeque::new(),
