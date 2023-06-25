@@ -9,7 +9,7 @@ use std::collections::VecDeque;
 
 /// Represents the ISA/IEA header information commonly known as the "envelope" in X12 EDI.
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
-pub struct InterchangeControl<'a, 'b> {
+pub struct InterchangeControl<'a> {
     // I chose to use `Cow`s here because I don't know how the crate will be used --
     // given enough documents of sufficient size and a restrictive enough environment,
     // the space complexity could undesirably grow. This allows for some mitigation
@@ -81,15 +81,15 @@ pub struct InterchangeControl<'a, 'b> {
     #[serde(borrow)]
     pub test_indicator: Cow<'a, str>, // P for production, T for test
     /// The [FunctionalGroups](struct.FunctionalGroup.html) contained in this interchange.
-    #[serde(borrow = "'a + 'b")]
-    pub functional_groups: VecDeque<FunctionalGroup<'a, 'b>>,
+    #[serde(borrow = "'a")]
+    pub functional_groups: VecDeque<FunctionalGroup<'a>>,
 }
 
-impl<'a, 'b> InterchangeControl<'a, 'b> {
+impl<'a> InterchangeControl<'a> {
     /// Given [SegmentTokens](struct.SegmentTokens.html) (where the first token is "ISA"), construct an [InterchangeControl].
     pub(crate) fn parse_from_tokens(
         input: SegmentTokens<'a>,
-    ) -> Result<InterchangeControl<'a, 'b>, EdiParseError> {
+    ) -> Result<InterchangeControl<'a>, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
@@ -343,7 +343,7 @@ fn test_isa_to_string() {
     );
     let transaction = Transaction {
         transaction_code: Cow::from("140"),
-        transaction_name: "",
+        transaction_name: Cow::from(""),
         transaction_set_control_number: Cow::from("100000001"),
         implementation_convention_reference: None,
         segments: segments,
