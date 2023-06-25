@@ -16,7 +16,7 @@ pub struct Transaction<'a> {
     pub transaction_code: Cow<'a, str>,
     /// The name of the transaction type in human-readable form.
     #[serde(borrow)]
-    pub transaction_name: Cow<'a, str>, // not a Cow because it is a reference to a HashMap value
+    pub transaction_name: Cow<'a, str>,
     /// Each transaction within a functional group also has a control number.
     /// Typically, trading partners use a number relative to the functional group in which they are contained.
     #[serde(borrow)]
