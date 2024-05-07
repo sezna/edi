@@ -14,4 +14,4 @@ readme = "README.md"
 csv = "1.1"
 lazy_static = "1.4.0"
 serde = { version = "1.0.101", features = ["derive"] }
-rust-embed = { version = "8.3.0", features = ["interpolate-folder-path"] }
+rust-embed = { version = "8.3.0", features = ["interpolate-folder-path", "debug-embed"] }
