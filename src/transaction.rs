@@ -40,11 +40,13 @@ struct Resources;
 lazy_static! {
     static ref SCHEMAS: HashMap<String, String> = {
         let mut map = HashMap::new();
-        let schemas_path = "resources/schemas.csv";
+        let file_content = Resources::get("resources/schemas.csv").unwrap();
+        let file_content_str = String::from_utf8_lossy(file_content.data.as_ref());
+
         let mut schemas_csv = ReaderBuilder::new()
             .has_headers(false)
-            .from_path(schemas_path)
-            .expect("Failed to open schemas.csv. Does edi/resources/schemas.csv exist?");
+            .from_reader(file_content_str.as_bytes());
+
         for record in schemas_csv.records() {
             let record = record.unwrap();
             map.insert(record[0].to_string(), record[1].to_string());
