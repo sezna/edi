@@ -16,7 +16,6 @@ pub struct GenericSegment<'a> {
 }
 
 impl<'a> GenericSegment<'a> {
-    #[doc(skip)]
     /// Given [SegmentTokens](struct.SegmentTokens.html), construct a [GenericSegment].
     pub(crate) fn parse_from_tokens(
         tokens: SegmentTokens<'a>,
