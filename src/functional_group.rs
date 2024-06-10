@@ -10,7 +10,7 @@ use std::collections::VecDeque;
 /// Represents a GS/GE segment which wraps a functional group.
 /// Documentation here gleaned mostly from [here](http://u.sezna.dev/b)
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
-pub struct FunctionalGroup<'a, 'b> {
+pub struct FunctionalGroup<'a> {
     /// Identifies the function of this group.
     /// See http://ecomgx17.ecomtoday.com/edi/EDI_4010/el479.htm for a list of
     /// functional identifier codes.
@@ -48,15 +48,15 @@ pub struct FunctionalGroup<'a, 'b> {
     #[serde(borrow)]
     pub version: Cow<'a, str>,
     /// The transactions that this functional group contains.
-    #[serde(borrow = "'a + 'b")]
-    pub transactions: VecDeque<Transaction<'a, 'b>>,
+    #[serde(borrow = "'a")]
+    pub transactions: VecDeque<Transaction<'a>>,
 }
 
-impl<'a, 'b> FunctionalGroup<'a, 'b> {
+impl<'a, 'b> FunctionalGroup<'a> {
     /// Given [SegmentTokens](struct.SegmentTokens.html) (where the first token is "GS"), construct a [FunctionalGroup].
     pub(crate) fn parse_from_tokens(
         input: SegmentTokens<'a>,
-    ) -> Result<FunctionalGroup<'a, 'b>, EdiParseError> {
+    ) -> Result<FunctionalGroup<'a>, EdiParseError> {
         let elements: Vec<&str> = input.iter().map(|x| x.trim()).collect();
         // I always inject invariants wherever I can to ensure debugging is quick and painless,
         // and to check my assumptions.
@@ -237,7 +237,7 @@ fn functional_group_to_string() {
     );
     let transaction = Transaction {
         transaction_code: Cow::from("140"),
-        transaction_name: "",
+        transaction_name: Cow::from(""),
         transaction_set_control_number: Cow::from("100000001"),
         implementation_convention_reference: None,
         segments: segments,
