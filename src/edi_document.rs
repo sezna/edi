@@ -25,8 +25,7 @@ impl EdiDocument<'_> {
     /// Turns this [EdiDocument] into an ANSI x12 string.
     pub fn to_x12_string(&self) -> String {
         let mut buffer = String::new();
-        let mut idx = 0;
-        for interchange in self.interchanges.iter() {
+        for (idx, interchange) in self.interchanges.iter().enumerate() {
             if idx > 0 {
                 buffer.push(self.segment_delimiter);
             }
@@ -35,7 +34,6 @@ impl EdiDocument<'_> {
                 self.element_delimiter,
                 self.sub_element_delimiter,
             ));
-            idx += 1;
         }
 
         buffer
@@ -44,19 +42,19 @@ impl EdiDocument<'_> {
 
 /// This is the main entry point to the crate. Parse an input str and output either
 /// an [EdiParseError] or a resulting [EdiDocument].
-pub fn parse(input: &str) -> Result<EdiDocument, EdiParseError> {
+pub fn parse(input: &str) -> Result<EdiDocument<'_>, EdiParseError> {
     parse_inner(input, false)
 }
 
 /// This is an alternate parser which does not perform closing tag validation. If you are receiving
 /// EDI documents which have had less rigor applied to their construction, this may help. The number
 /// of documents in the confirmation and the IDs on the closing tags don't need to match.
-pub fn loose_parse(input: &str) -> Result<EdiDocument, EdiParseError> {
+pub fn loose_parse(input: &str) -> Result<EdiDocument<'_>, EdiParseError> {
     parse_inner(input, true)
 }
 
 /// An internal function which is the root of the parsing. It is accessed publicly via [parse] and [loose_parse].
-fn parse_inner(input: &str, loose: bool) -> Result<EdiDocument, EdiParseError> {
+fn parse_inner(input: &str, loose: bool) -> Result<EdiDocument<'_>, EdiParseError> {
     let tokenize_result = tokenize(input)?;
     let document_tokens = tokenize_result.tokens;
 
@@ -99,10 +97,10 @@ fn parse_inner(input: &str, loose: bool) -> Result<EdiDocument, EdiParseError> {
         }
     }
 
-    return Ok(EdiDocument {
+    Ok(EdiDocument {
         interchanges,
         element_delimiter: tokenize_result.element_delimiter,
         sub_element_delimiter: tokenize_result.sub_element_delimiter,
         segment_delimiter: tokenize_result.segment_delimiter,
-    });
+    })
 }

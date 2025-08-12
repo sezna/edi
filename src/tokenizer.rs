@@ -45,7 +45,7 @@ pub(crate) fn tokenize<'a>(input: &'a str) -> Result<TokenizeResult<'a>, EdiPars
     let segments: SegmentTokens = input
         .split(segment_delimiter)
         .map(|x| x.trim())
-        .filter(|x| *x != "")
+        .filter(|x| !x.is_empty())
         .collect();
     let tokens: DocumentTokens = segments
         .iter()

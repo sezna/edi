@@ -1,8 +1,8 @@
 [package]
 name = "edi"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Alex Hansen <alex@alex-hansen.com>"]
-edition = "2018"
+edition = "2021"
 license-file = "LICENSE.md"
 description = "Parser for X12 EDI files"
 homepage = "https://github.com/sezna/edi"

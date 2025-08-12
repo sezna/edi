@@ -7,6 +7,7 @@ pub struct EdiParseError {
     /// The reason for the error.
     reason: String,
     /// The segment in which the error occurred.
+    #[allow(dead_code)]
     error_segment: Option<Vec<String>>,
 }
 
@@ -25,11 +26,8 @@ impl error::Error for EdiParseError {
 impl EdiParseError {
     /// Construct a new [EdiParseError].
     pub fn new(reason: &str, error_segment: Option<SegmentTokens>) -> EdiParseError {
-        let error_segment = if let Some(error_segment) = error_segment {
-            Some(error_segment.iter().map(|x| x.to_string()).collect())
-        } else {
-            None
-        };
+        let error_segment = error_segment
+            .map(|error_segment| error_segment.iter().map(|x| x.to_string()).collect());
         EdiParseError {
             reason: String::from(reason),
             error_segment,
@@ -43,13 +41,13 @@ pub fn try_option<T>(
     maybe_segment: Option<T>,
     error_segment: &SegmentTokens,
 ) -> Result<T, EdiParseError> {
-    if maybe_segment.is_some() {
-        return Ok(maybe_segment.unwrap());
+    if let Some(segment) = maybe_segment {
+        Ok(segment)
     } else {
-        return Err(EdiParseError{
+        Err(EdiParseError{
             reason: "EDI file out of order: from out to in, the file must have ISA, GS, ST, and then generic segments".to_string(),
             error_segment: Some(error_segment.iter().map(|x| x.to_string()).collect())
-        });
+        })
     }
 }
 
