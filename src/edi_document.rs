@@ -118,10 +118,10 @@ BEG*00*SA*PO123**20200301~
 SE*3*0001~
 GE*1*1~
 IEA*1*000000001~";
-        
+
         let doc = parse(input).unwrap();
         let output = doc.to_x12_string();
-        
+
         // The output should contain all the essential segments
         assert!(output.contains("ISA"));
         assert!(output.contains("GS"));
@@ -142,17 +142,17 @@ REF*DP*123456~
 SE*4*0001~
 GE*1*1~
 IEA*1*000000001~";
-        
+
         let doc1 = parse(input).unwrap();
         let output = doc1.to_x12_string();
         let doc2 = parse(&output).unwrap();
-        
+
         // Verify key properties are preserved
         assert_eq!(doc1.interchanges.len(), doc2.interchanges.len());
         assert_eq!(doc1.element_delimiter, doc2.element_delimiter);
         assert_eq!(doc1.segment_delimiter, doc2.segment_delimiter);
         assert_eq!(doc1.sub_element_delimiter, doc2.sub_element_delimiter);
-        
+
         // Verify the document structure is preserved
         assert_eq!(
             doc1.interchanges[0].functional_groups.len(),
@@ -181,7 +181,7 @@ GE*1*2~
 IEA*1*000000002~";
 
         let doc = parse(input).unwrap();
-        
+
         // Should have two interchanges
         assert_eq!(doc.interchanges.len(), 2);
         assert_eq!(doc.interchanges[0].sender_id, "SENDER1");
@@ -200,11 +200,11 @@ BEG:00:SA:PO123::20200301~
 SE:3:0001~
 GE:1:1~
 IEA:1:000000001~";
-        
+
         let doc = parse(input).unwrap();
         assert_eq!(doc.element_delimiter, ':');
         assert_eq!(doc.segment_delimiter, '~');
-        
+
         // Verify the document was parsed correctly
         assert_eq!(doc.interchanges.len(), 1);
         assert_eq!(doc.interchanges[0].sender_id, "SENDER");
@@ -221,10 +221,10 @@ BEG*00*SA*PO123**20200301~
 SE*5*0001~
 GE*1*1~
 IEA*1*000000001~";
-        
+
         // Should fail with strict parse
         assert!(parse(input).is_err());
-        
+
         // Should succeed with loose parse
         let doc = loose_parse(input).unwrap();
         assert_eq!(doc.interchanges.len(), 1);
@@ -239,10 +239,10 @@ BEG*00*SA*PO123:SUB1:SUB2**20200301~
 SE*3*0001~
 GE*1*1~
 IEA*1*000000001~";
-        
+
         let doc = parse(input).unwrap();
         assert_eq!(doc.sub_element_delimiter, ':');
-        
+
         // Verify sub-elements are preserved
         let beg_segment = &doc.interchanges[0].functional_groups[0].transactions[0].segments[0];
         assert_eq!(beg_segment.segment_abbreviation, "BEG");
