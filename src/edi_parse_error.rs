@@ -7,6 +7,7 @@ pub struct EdiParseError {
     /// The reason for the error.
     reason: String,
     /// The segment in which the error occurred.
+    #[allow(dead_code)]
     error_segment: Option<Vec<String>>,
 }
 
@@ -25,11 +26,8 @@ impl error::Error for EdiParseError {
 impl EdiParseError {
     /// Construct a new [EdiParseError].
     pub fn new(reason: &str, error_segment: Option<SegmentTokens>) -> EdiParseError {
-        let error_segment = if let Some(error_segment) = error_segment {
-            Some(error_segment.iter().map(|x| x.to_string()).collect())
-        } else {
-            None
-        };
+        let error_segment = error_segment
+            .map(|error_segment| error_segment.iter().map(|x| x.to_string()).collect());
         EdiParseError {
             reason: String::from(reason),
             error_segment,
@@ -43,13 +41,13 @@ pub fn try_option<T>(
     maybe_segment: Option<T>,
     error_segment: &SegmentTokens,
 ) -> Result<T, EdiParseError> {
-    if maybe_segment.is_some() {
-        return Ok(maybe_segment.unwrap());
+    if let Some(segment) = maybe_segment {
+        Ok(segment)
     } else {
-        return Err(EdiParseError{
+        Err(EdiParseError{
             reason: "EDI file out of order: from out to in, the file must have ISA, GS, ST, and then generic segments".to_string(),
             error_segment: Some(error_segment.iter().map(|x| x.to_string()).collect())
-        });
+        })
     }
 }
 
@@ -98,4 +96,89 @@ macro_rules! edi_assert {
             ));
         }
     }};
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_display() {
+        let error = EdiParseError::new("Test error reason", None);
+        let display_string = format!("{}", error);
+        assert!(display_string.contains("Error parsing input into EDI document"));
+        assert!(display_string.contains("Test error reason"));
+    }
+
+    #[test]
+    fn test_error_construction_with_segment() {
+        let segment = vec!["ISA", "00", "test"];
+        let error = EdiParseError::new("Invalid segment", Some(segment.clone()));
+        assert!(format!("{}", error).contains("Invalid segment"));
+    }
+
+    #[test]
+    fn test_error_construction_without_segment() {
+        let error = EdiParseError::new("Missing required field", None);
+        assert!(format!("{}", error).contains("Missing required field"));
+    }
+
+    #[test]
+    fn test_try_option_with_some() {
+        let segment = vec!["TEST"];
+        let result = try_option(Some(42), &segment);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 42);
+    }
+
+    #[test]
+    fn test_try_option_with_none() {
+        let segment = vec!["TEST"];
+        let result: Result<i32, EdiParseError> = try_option(None, &segment);
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        assert!(format!("{}", error).contains("EDI file out of order"));
+    }
+
+    #[test]
+    fn test_edi_assert_macro_simple() {
+        fn test_assert_simple() -> Result<(), EdiParseError> {
+            edi_assert!(true, "This should not fail");
+            edi_assert!(1 + 1 == 2, "Math still works");
+            Ok(())
+        }
+        assert!(test_assert_simple().is_ok());
+    }
+
+    #[test]
+    fn test_edi_assert_macro_failure() {
+        fn test_assert_failure() -> Result<(), EdiParseError> {
+            edi_assert!(false, "This should fail");
+            Ok(())
+        }
+        let result = test_assert_failure();
+        assert!(result.is_err());
+        assert!(format!("{}", result.unwrap_err()).contains("This should fail"));
+    }
+
+    #[test]
+    fn test_edi_assert_with_expected_result() {
+        fn test_assert_with_values() -> Result<(), EdiParseError> {
+            let expected = "850";
+            let result = "810";
+            edi_assert!(
+                expected == result,
+                "Transaction code mismatch",
+                expected,
+                result
+            );
+            Ok(())
+        }
+        let result = test_assert_with_values();
+        assert!(result.is_err());
+        let error_msg = format!("{}", result.unwrap_err());
+        assert!(error_msg.contains("Transaction code mismatch"));
+        assert!(error_msg.contains("expected: 850"));
+        assert!(error_msg.contains("received: 810"));
+    }
 }

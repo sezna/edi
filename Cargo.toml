@@ -1,8 +1,8 @@
 [package]
 name = "edi"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Alex Hansen <alex@alex-hansen.com>"]
-edition = "2018"
+edition = "2021"
 license-file = "LICENSE.md"
 description = "Parser for X12 EDI files"
 homepage = "https://github.com/sezna/edi"
@@ -15,3 +15,6 @@ csv = "1.1"
 lazy_static = "1.4.0"
 rust-embed = { version = "8.7.2", features = ["interpolate-folder-path", "debug-embed"] }
 serde = { version = "1.0.101", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1.0"

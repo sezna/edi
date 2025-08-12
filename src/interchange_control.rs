@@ -209,7 +209,7 @@ impl<'a> InterchangeControl<'a> {
             tokens
         );
         edi_assert!(
-            str::parse::<usize>(&tokens[1].to_string()).unwrap() == self.functional_groups.len(),
+            str::parse::<usize>(tokens[1]).unwrap() == self.functional_groups.len(),
             "interchange validation failed: incorrect number of functional groups",
             tokens[1].to_string(),
             self.functional_groups.len(),
@@ -234,10 +234,10 @@ impl<'a> InterchangeControl<'a> {
         if let Some(functional_group) = self.functional_groups.back() {
             functional_group.validate_functional_group(tokens)
         } else {
-            return Err(EdiParseError::new(
+            Err(EdiParseError::new(
                 "unable to verify nonexistent functional group",
                 Some(tokens),
-            ));
+            ))
         }
     }
 
@@ -249,10 +249,10 @@ impl<'a> InterchangeControl<'a> {
         if let Some(functional_group) = self.functional_groups.back() {
             functional_group.validate_transaction(tokens)
         } else {
-            return Err(EdiParseError::new(
+            Err(EdiParseError::new(
                 "unable to verify transaction within nonexistent functional group",
                 Some(tokens),
-            ));
+            ))
         }
     }
     /// Converts this [InterchangeControl] into an ANSI x12 string for use in an EDI document.
@@ -322,31 +322,28 @@ fn pad_right(input: &str, desired_length: u8) -> String {
 fn test_isa_to_string() {
     use crate::{GenericSegment, Transaction};
     use std::iter::FromIterator;
-    let segments = VecDeque::from_iter(
-        vec![
-            GenericSegment {
-                segment_abbreviation: Cow::from("BGN"),
-                elements: vec!["20", "TEST_ID", "200615", "0000"]
-                    .iter()
-                    .map(|x| Cow::from(*x))
-                    .collect::<VecDeque<Cow<str>>>(),
-            },
-            GenericSegment {
-                segment_abbreviation: Cow::from("BGN"),
-                elements: vec!["15", "OTHER_TEST_ID", "", "", "END"]
-                    .iter()
-                    .map(|x| Cow::from(*x))
-                    .collect::<VecDeque<Cow<str>>>(),
-            },
-        ]
-        .into_iter(),
-    );
+    let segments = VecDeque::from_iter(vec![
+        GenericSegment {
+            segment_abbreviation: Cow::from("BGN"),
+            elements: ["20", "TEST_ID", "200615", "0000"]
+                .iter()
+                .map(|x| Cow::from(*x))
+                .collect::<VecDeque<Cow<str>>>(),
+        },
+        GenericSegment {
+            segment_abbreviation: Cow::from("BGN"),
+            elements: ["15", "OTHER_TEST_ID", "", "", "END"]
+                .iter()
+                .map(|x| Cow::from(*x))
+                .collect::<VecDeque<Cow<str>>>(),
+        },
+    ]);
     let transaction = Transaction {
         transaction_code: Cow::from("140"),
         transaction_name: Cow::from(""),
         transaction_set_control_number: Cow::from("100000001"),
         implementation_convention_reference: None,
-        segments: segments,
+        segments,
     };
 
     let functional_group = FunctionalGroup {
@@ -358,7 +355,7 @@ fn test_isa_to_string() {
         group_control_number: Cow::from("1"),
         responsible_agency_code: Cow::from("X"),
         version: Cow::from("004010"),
-        transactions: VecDeque::from_iter(vec![transaction].into_iter()),
+        transactions: VecDeque::from_iter(vec![transaction]),
     };
 
     let interchange = InterchangeControl {
@@ -377,7 +374,7 @@ fn test_isa_to_string() {
         interchange_control_number: Cow::from("000000001"),
         acknowledgement_requested: Cow::from("0"),
         test_indicator: Cow::from("T"),
-        functional_groups: VecDeque::from_iter(vec![functional_group].into_iter()),
+        functional_groups: VecDeque::from_iter(vec![functional_group]),
     };
 
     assert_eq!(interchange.to_x12_string('~', '*', '>'), "ISA*00*          *00*          *ZZ*SENDERISA      *14*0073268795005  *020226*1534*U*00401*000000001*0*T*>~GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010~ST*140*100000001*~BGN*20*TEST_ID*200615*0000~BGN*15*OTHER_TEST_ID***END~SE*4*100000001~GE*1*1~IEA*1*000000001");

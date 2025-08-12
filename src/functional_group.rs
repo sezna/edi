@@ -52,7 +52,7 @@ pub struct FunctionalGroup<'a> {
     pub transactions: VecDeque<Transaction<'a>>,
 }
 
-impl<'a, 'b> FunctionalGroup<'a> {
+impl<'a> FunctionalGroup<'a> {
     /// Given [SegmentTokens](struct.SegmentTokens.html) (where the first token is "GS"), construct a [FunctionalGroup].
     pub(crate) fn parse_from_tokens(
         input: SegmentTokens<'a>,
@@ -173,7 +173,7 @@ impl<'a, 'b> FunctionalGroup<'a> {
     /// Converts this functional group into an ANSI x12 string for use in an EDI document.
     pub fn to_x12_string(&self, segment_delimiter: char, element_delimiter: char) -> String {
         let header = String::from("GS");
-        let elements_of_gs = vec![
+        let elements_of_gs = [
             self.functional_identifier_code.clone(),
             self.application_sender_code.clone(),
             self.application_receiver_code.clone(),
@@ -186,7 +186,7 @@ impl<'a, 'b> FunctionalGroup<'a> {
 
         let mut buffer = elements_of_gs.iter().fold(header, |mut acc, elem| {
             acc.push(element_delimiter);
-            acc.push_str(&elem);
+            acc.push_str(elem);
             acc
         });
         let transactions = self
@@ -216,31 +216,28 @@ impl<'a, 'b> FunctionalGroup<'a> {
 fn functional_group_to_string() {
     use crate::GenericSegment;
     use std::iter::FromIterator;
-    let segments = VecDeque::from_iter(
-        vec![
-            GenericSegment {
-                segment_abbreviation: Cow::from("BGN"),
-                elements: vec!["20", "TEST_ID", "200615", "0000"]
-                    .iter()
-                    .map(|x| Cow::from(*x))
-                    .collect::<VecDeque<Cow<str>>>(),
-            },
-            GenericSegment {
-                segment_abbreviation: Cow::from("BGN"),
-                elements: vec!["15", "OTHER_TEST_ID", "", "", "END"]
-                    .iter()
-                    .map(|x| Cow::from(*x))
-                    .collect::<VecDeque<Cow<str>>>(),
-            },
-        ]
-        .into_iter(),
-    );
+    let segments = VecDeque::from_iter(vec![
+        GenericSegment {
+            segment_abbreviation: Cow::from("BGN"),
+            elements: ["20", "TEST_ID", "200615", "0000"]
+                .iter()
+                .map(|x| Cow::from(*x))
+                .collect::<VecDeque<Cow<str>>>(),
+        },
+        GenericSegment {
+            segment_abbreviation: Cow::from("BGN"),
+            elements: ["15", "OTHER_TEST_ID", "", "", "END"]
+                .iter()
+                .map(|x| Cow::from(*x))
+                .collect::<VecDeque<Cow<str>>>(),
+        },
+    ]);
     let transaction = Transaction {
         transaction_code: Cow::from("140"),
         transaction_name: Cow::from(""),
         transaction_set_control_number: Cow::from("100000001"),
         implementation_convention_reference: None,
-        segments: segments,
+        segments,
     };
 
     let functional_group = FunctionalGroup {
@@ -252,7 +249,7 @@ fn functional_group_to_string() {
         group_control_number: Cow::from("1"),
         responsible_agency_code: Cow::from("X"),
         version: Cow::from("004010"),
-        transactions: VecDeque::from_iter(vec![transaction].into_iter()),
+        transactions: VecDeque::from_iter(vec![transaction]),
     };
     assert_eq!(functional_group.to_x12_string('\n', '*'), "GS*PO*SENDERGS*007326879*20020226*1534*1*X*004010\nST*140*100000001*\nBGN*20*TEST_ID*200615*0000\nBGN*15*OTHER_TEST_ID***END\nSE*4*100000001\nGE*1*1");
 }

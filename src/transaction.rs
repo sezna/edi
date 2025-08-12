@@ -169,31 +169,28 @@ impl<'a> Transaction<'a> {
 #[test]
 fn transaction_to_string() {
     use std::iter::FromIterator;
-    let segments = VecDeque::from_iter(
-        vec![
-            GenericSegment {
-                segment_abbreviation: Cow::from("BGN"),
-                elements: vec!["20", "TEST_ID", "200615", "0000"]
-                    .iter()
-                    .map(|x| Cow::from(*x))
-                    .collect::<VecDeque<Cow<str>>>(),
-            },
-            GenericSegment {
-                segment_abbreviation: Cow::from("BGN"),
-                elements: vec!["15", "OTHER_TEST_ID", "", "", "END"]
-                    .iter()
-                    .map(|x| Cow::from(*x))
-                    .collect::<VecDeque<Cow<str>>>(),
-            },
-        ]
-        .into_iter(),
-    );
+    let segments = VecDeque::from_iter(vec![
+        GenericSegment {
+            segment_abbreviation: Cow::from("BGN"),
+            elements: ["20", "TEST_ID", "200615", "0000"]
+                .iter()
+                .map(|x| Cow::from(*x))
+                .collect::<VecDeque<Cow<str>>>(),
+        },
+        GenericSegment {
+            segment_abbreviation: Cow::from("BGN"),
+            elements: ["15", "OTHER_TEST_ID", "", "", "END"]
+                .iter()
+                .map(|x| Cow::from(*x))
+                .collect::<VecDeque<Cow<str>>>(),
+        },
+    ]);
     let transaction = Transaction {
         transaction_code: Cow::from("140"),
         transaction_name: Cow::from(""),
         transaction_set_control_number: Cow::from("100000001"),
         implementation_convention_reference: None,
-        segments: segments,
+        segments,
     };
 
     assert_eq!(

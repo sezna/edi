@@ -19,7 +19,7 @@ impl<'a> GenericSegment<'a> {
     /// Given [SegmentTokens](struct.SegmentTokens.html), construct a [GenericSegment].
     pub(crate) fn parse_from_tokens(
         tokens: SegmentTokens<'a>,
-    ) -> Result<GenericSegment, EdiParseError> {
+    ) -> Result<GenericSegment<'a>, EdiParseError> {
         let elements: Vec<&str> = tokens.iter().map(|x| x.trim()).collect();
         edi_assert!(
             elements.len() >= 2,
@@ -57,7 +57,7 @@ impl<'a> GenericSegment<'a> {
 fn convert_generic_segment_to_string() {
     let segment = GenericSegment {
         segment_abbreviation: Cow::from("BGN"),
-        elements: vec!["20", "TEST_ID", "200615", "0000"]
+        elements: ["20", "TEST_ID", "200615", "0000"]
             .iter()
             .map(|x| Cow::from(*x))
             .collect::<VecDeque<Cow<str>>>(),
@@ -82,7 +82,7 @@ fn construct_generic_segment() {
 
     let expected_result = GenericSegment {
         segment_abbreviation: Cow::from("GS"),
-        elements: vec![
+        elements: [
             "PO",
             "SENDERGS",
             "007326879",
