@@ -3,6 +3,7 @@ use crate::generic_segment::GenericSegment;
 use crate::tokenizer::SegmentTokens;
 use csv::ReaderBuilder;
 use lazy_static::lazy_static;
+use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
@@ -29,16 +30,21 @@ pub struct Transaction<'a> {
     pub segments: VecDeque<GenericSegment<'a>>,
 }
 
+#[derive(RustEmbed)]
+#[folder = "$CARGO_MANIFEST_DIR/resources"]
+#[prefix = "resources/"]
+struct Resources;
+
 // Load the potential transaction schema names from a csv
 // source: scraped from https://www.arcesb.com/edi/standards/x12/
 lazy_static! {
     static ref SCHEMAS: HashMap<String, String> = {
         let mut map = HashMap::new();
-        let schemas_path = format!("{}/resources/schemas.csv", env!("CARGO_MANIFEST_DIR"));
+        let file_content = Resources::get("resources/schemas.csv").unwrap();
+        let file_content_str = String::from_utf8_lossy(file_content.data.as_ref());
         let mut schemas_csv = ReaderBuilder::new()
             .has_headers(false)
-            .from_path(schemas_path)
-            .expect("Failed to open schemas.csv. Does edi/resources/schemas.csv exist?");
+            .from_reader(file_content_str.as_bytes());
         for record in schemas_csv.records() {
             let record = record.unwrap();
             map.insert(record[0].to_string(), record[1].to_string());
